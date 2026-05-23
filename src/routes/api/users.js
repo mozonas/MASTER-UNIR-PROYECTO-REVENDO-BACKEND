@@ -8,6 +8,7 @@ const { clienteSchema } = require('../../schemas/users.schema');
 // Rutas de /api/Users
 router.get('/', getAll);
 router.get('/:userId', checkUserId, getById);
+router.get('/:userEmail', checkUserId, getByEmail);
 router.post('/', validateSchema(userSchema), create);
 router.put('/:userId', checkUserId, edit);
 router.delete('/:userId', checkUserId, remove);
