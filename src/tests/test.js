@@ -1,5 +1,5 @@
 require('dotenv').config();
-const pool = require('./src/confing/db.js');
+const pool = require('../confing/db.js');
 
 pool.getConnection()
   .then(c => {
