@@ -1,0 +1,13 @@
+POST http://localhost:3000/api/signup
+Content-Type: application/json
+
+{
+    "nombre": "Ejemplo1",
+    "apellidos": "López",
+    "email": "ruth@com",
+    "usuario": "prueba1",
+    "password": "contraseña123",
+    "fecha_nacimiento": "1987-09-23",
+    "foto": "https://example.com/foto.jpg",
+    "direccion": "Calle Falsa 123"
+}

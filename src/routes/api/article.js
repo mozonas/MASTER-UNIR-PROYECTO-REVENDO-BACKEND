@@ -10,7 +10,9 @@
 const express = require('express');
 
 // 2. Importar las funciones del controlador de articulos
-const articleController = require('../controllers/article.controller');
+//const articleController = require('../controllers/article.controller');
+const articleController = require('../../controllers/article.controller');
+
 
 // 4. Crear una instancia del Router
 const router = express.Router();

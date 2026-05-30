@@ -8,14 +8,15 @@
 
 // 1. Importaciones de enrutadores
 const express = require('express');
-const articleRouter = require('./src/routes/api/article.route');
+const articleRoutes = require('./routes/api/article');
+
 
 // 2. Inicializacion de la aplicacion
 const app = express();
 console.log('Aplicacion Express inicializada.');
 
 // 3. Vinculación de endpoints con enrutadores
-app.use('/api/articles', articleRouter);
+app.use('/api/articles', articleRoutes);
 console.log('Enrutador de articulos vinculado a /api/articles.');
 
 // 4. Exportar la aplicacion para ser utilizada en el servidor
