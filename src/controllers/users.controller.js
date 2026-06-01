@@ -1,4 +1,5 @@
 const UserModel = require('../models/users.model');
+const bcrypt = require('bcryptjs');
 
 const getAll = async (req, res) => {
     try {
@@ -17,7 +18,7 @@ const getById = (req, res) => {
 }
 
 const create = async (req, res) => {
-    // req.body -> nombre, apellidos, direccion, email, edad, genero, cuota, fecha_nacimiento, dni.
+    // req.body -> { name: '...', email: '...', password: '...' }
     const result = await UserModel.insert(req.body)
     const newUser = await UserModel.selectById(result.insertId);
 
@@ -47,6 +48,17 @@ const remove = async (req, res) => {
     res.json(req.user);
 }
 
+//31052026 - F4eature Login/SignUp
+const register = async (req, res) => {
+    // Body: username, email, password
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
+
+    const result = await UserModel.insert(req.body);
+    res.json({
+        message: 'Registro completo'
+    });
+}
+
 module.exports = {
-    getAll, getById, create, edit, remove
+    getAll, getById, create, edit, remove, register
 }
