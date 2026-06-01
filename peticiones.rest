@@ -3,11 +3,11 @@ POST http://localhost:3000/api/signup
 Content-Type: application/json
 
 {
-  "nombre": "Miguel",
+  "nombre": "Miguel A",
   "apellidos": "López Martínez",
-  "email": "miguel@example.com",
+  "email": "migue2@example.com",
   "usuario": "miguel_dev",
-  "password": "ClaveSegura123",
+  "password": "12345678",
   "fecha_nacimiento": "1987-09-23",
   "foto": "https://example.com/foto-perfil.jpg",
   "direccion": "Carrer de la Mar, 45, Sóller"
