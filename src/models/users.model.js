@@ -16,4 +16,10 @@ const insert = async (user) => {
     
     return result;
 }
-module.exports = { getAll, getById, insert };
+
+const selectByEmail = async (email) => {
+    const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+    return rows[0];
+}
+
+module.exports = { getAll, getById, insert, selectByEmail    };
