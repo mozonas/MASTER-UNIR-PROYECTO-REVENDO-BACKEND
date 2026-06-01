@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const { getAll, create, remove, edit, getById } = require('../../controllers/transactions.controller');
 const { checkClienteId } = require('../../middlewares/transactions.middleware');
-const { validateSchema } = require('../../middlewares/validation.middleware');
+const { validateSchema } = require('../../middlewares/validations.middleware');
 const { transactionSchema } = require('../../schemas/transaction.schema');
 
 // Rutas de /api/Transactions

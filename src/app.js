@@ -1,22 +1,28 @@
-/* 
-1. Importaciones de enrutadores
-2. Inicializacion de la aplicacion
-3. Vinculación de endpoints con enrutadores
-4. Exportar la aplicacion para ser utilizada en el servidor
-*/
 
-
-// 1. Importaciones de enrutadores
 const express = require('express');
-const articleRouter = require('./src/routes/api/article.route');
-
-// 2. Inicializacion de la aplicacion
+const cors = require("cors");
 const app = express();
+
+app.use(express.json());
+app.use(cors());
 console.log('Aplicacion Express inicializada.');
 
-// 3. Vinculación de endpoints con enrutadores
-app.use('/api/articles', articleRouter);
-console.log('Enrutador de articulos vinculado a /api/articles.');
+// Route configuration
+app.use('/api', require('./routes/api'));
 
-// 4. Exportar la aplicacion para ser utilizada en el servidor
+// 404 handler
+app.use((req, res, next) => {
+    res.status(404).json({
+        message: "Not found"
+    });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    // Winston
+    res.status(500).json({ message: err.message });
+});
+
 module.exports = app;
+
