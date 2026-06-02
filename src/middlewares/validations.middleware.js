@@ -1,5 +1,3 @@
-// src/middlewares/validation.middleware.js
-
 const validateSchema = (schema) => {
     return async (req, res, next) => {
         try {

@@ -10,7 +10,7 @@
 
 
 // 1.Importar conexion a la base de datos
-const db = require('../confing/db');
+const db = require('../config/db');
 
 // 2. Obtener los articulos
 const Article = {

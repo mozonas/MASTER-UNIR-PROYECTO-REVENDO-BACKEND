@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const { getAll, create, remove, edit, getById } = require('../../controllers/messages.controller');
 const { checkClienteId } = require('../../middlewares/messages.middleware');
-const { validateSchema } = require('../../middlewares/validation.middleware');
+const { validateSchema } = require('../../middlewares/validations.middleware');
 const { clienteSchema } = require('../../schemas/messages.schema');
 
 // Rutas de /api/Messages
