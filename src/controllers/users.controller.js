@@ -1,23 +1,22 @@
-const usersModel = require('../models/users.models'); // Ajusta la ruta si tu modelo está en otra carpeta
+const UserModel = require('../models/users.model');
+const bcrypt = require('bcryptjs');
 
-// 1. Obtener todos los usuarios
 const getAll = async (req, res) => {
     try {
-        const usuarios = await usersModel.getAll();
-        res.json(usuarios);
+        const users = await UserModel.selectAll();
+        res.json(users);
     } catch (error) {
-        console.error('Error en getAll controller:', error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener usuarios' });
+        console.log(error);
+        res.status(500).json({
+            message: 'Hay un error gravísimo'
+        });
     }
-};
+}
 
-// 2. Obtener un usuario por su ID
 const getById = async (req, res) => {
     try {
-        // El middleware 'checkUserId' ya verificó que existe y guardó el objeto limpio aquí
+        // Extraemos el usuario inyectado limpiamente por el middleware
         const usuario = req.usuarioEncontrado;
-
-        // Lo enviamos directamente a Angular tal cual viene de la DB
         res.json(usuario);
     } catch (error) {
         console.error('Error en getById controller:', error);
@@ -25,73 +24,48 @@ const getById = async (req, res) => {
     }
 };
 
-// 3. Obtener un usuario por Email
-const getByEmail = async (req, res) => {
-    try {
-        const { userEmail } = req.params;
-        const usuario = await usersModel.getByEmail(userEmail);
-
-        if (!usuario) {
-            return res.status(404).json({ message: `Usuario con email ${userEmail} no encontrado` });
-        }
-
-        res.json(usuario);
-    } catch (error) {
-        console.error('Error en getByEmail controller:', error);
-        res.status(500).json({ message: 'Error interno del servidor' });
-    }
-};
-
-// 4. Crear un nuevo usuario
 const create = async (req, res) => {
-    try {
-        // req.body contiene el JSON validado que envía el frontend
-        const nuevoUsuario = await usersModel.create(req.body);
-        res.status(201).json(nuevoUsuario);
-    } catch (error) {
-        console.error('Error en create controller:', error);
-        res.status(500).json({ message: 'Error al registrar el usuario' });
-    }
-};
+    // req.body -> { name: '...', email: '...', password: '...' }
+    const result = await UserModel.insert(req.body)
+    const newUser = await UserModel.selectById(result.insertId);
 
-// 5. Editar un usuario (PUT)
+    if (!newUser) {
+        return res.status(404).json({ message: 'No existe el usuario con ese ID' });
+    }
+
+    res.status(201).json(newUser);
+}
+
 const edit = async (req, res) => {
-    try {
-        const { userId } = req.params;
+    // req.body 
+    // req.params.userId
+    const { body, params: { userId } } = req;
 
-        // Ya sabemos que el usuario existe gracias al middleware,
-        // así que ejecutamos la actualización directamente sin ifs adicionales de existencia.
-        await usersModel.updateById(userId, req.body);
+    const result = await UserModel.updateById(userId, body);
+    const user = await UserModel.selectById(userId);
 
-        res.json({ message: 'Usuario actualizado correctamente' });
-    } catch (error) {
-        console.error('Error en edit controller:', error);
-        res.status(500).json({ message: 'Error al actualizar el usuario' });
-    }
-};
+    res.json(user);
+}
 
-// 6. Eliminar un usuario (DELETE)
 const remove = async (req, res) => {
-    try {
-        const { userId } = req.params;
+    const { userId } = req.params;
 
-        // El middleware ya garantizó que el ID es real,
-        // procedemos al borrado directo de la base de datos.
-        await usersModel.deleteById(userId);
+    const result = await UserModel.deleteById(userId);
 
-        res.json({ message: 'Usuario eliminado correctamente de la base de datos' });
-    } catch (error) {
-        console.error('Error en remove controller:', error);
-        res.status(500).json({ message: 'Error al eliminar el usuario' });
-    }
-};
+    res.json(req.user);
+}
 
-// Exportamos las funciones mapeadas con tu archivo de rutas
+//31052026 - F4eature Login/SignUp
+const register = async (req, res) => {
+    // Body: username, email, password
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
+
+    const result = await UserModel.insert(req.body);
+    res.json({
+        message: 'Registro completo'
+    });
+}
+
 module.exports = {
-    getAll,
-    getById,
-    getByEmail,
-    create,
-    edit,
-    remove
-};
+    getAll, getById, create, edit, remove, register
+}

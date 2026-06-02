@@ -1,5 +1,5 @@
 require('dotenv').config();
-const usersModel = require('../models/users.models');
+const usersModel = require('../models/users.model');
 
 const separator = (title) => console.log(`\n🔹 [TEST] ${title} ------------------`);
 

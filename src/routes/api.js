@@ -5,7 +5,7 @@ const { checkToken } = require('../middlewares/auth.middleware');
 
 // Rutas de /api
 router.use('/users', require('./api/users'));
-router.use('/signup', require('./api/signup'));
+// router.use('/signup', require('./api/signup'));
 router.use('/login', require('./api/login'));
 
 //router.use('/messages', require('./api/messages'));
