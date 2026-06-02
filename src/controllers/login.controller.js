@@ -26,7 +26,7 @@ const login = async (req, res) => {
             userId: user.id,
             username: user.usuario,
             email: user.email,
-            rol: user.rol
+            perfil: user.perfil
         },
         process.env.JWT_SECRET_KEY
     );
