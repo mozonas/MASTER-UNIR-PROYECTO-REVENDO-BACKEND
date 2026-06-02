@@ -1,7 +1,7 @@
-const db = require('../confing/db'); // Mantenemos tu configuración original
+const db = require('../confing/db');
 
 // ==========================================
-// 📖 CONSULTAS DE LECTURA (READ)
+//       CONSULTAS DE LECTURA (READ)
 // ==========================================
 
 const getAll = async () => {
@@ -29,14 +29,14 @@ const getByUsername = async (username) => {
 
 const getPaginated = async (limit, offset) => {
     const [rows] = await db.query(
-        'SELECT id, nombre, apellidos, email, usuario, foto, perfil FROM usuarios LIMIT ? OFFSET ?', 
+        'SELECT id, nombre, apellidos, email, usuario, foto, perfil FROM usuarios LIMIT ? OFFSET ?',
         [parseInt(limit), parseInt(offset)]
     );
     return rows;
 };
 
 // ==========================================
-// ✍️ OPERACIONES DE ESCRITURA (CREATE, UPDATE, DELETE)
+//   OPERACIONES (CREATE, UPDATE, DELETE)
 // ==========================================
 
 const create = async ({ nombre, apellidos, email, usuario, password, foto = null, perfil = 'USUARIO', fecha_nacimiento = null }) => {
@@ -79,14 +79,14 @@ const deleteById = async (id) => {
     return result.affectedRows > 0;
 };
 
-module.exports = { 
-    getAll, 
-    getById, 
+module.exports = {
+    getAll,
+    getById,
     getByEmail,
     getByUsername,
     getPaginated,
-    create, 
-    updateById, 
+    create,
+    updateById,
     patchById,
     deleteById
 };

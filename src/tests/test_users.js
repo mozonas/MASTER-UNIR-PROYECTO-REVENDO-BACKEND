@@ -13,7 +13,7 @@ async function runSuite() {
         separator('Listar usuarios existentes (getAll)');
         const usuariosIniciales = await usersModel.getAll();
         console.log(`✅ Conexión con éxito. Hay ${usuariosIniciales.length} usuarios en la base de datos.`);
-        if(usuariosIniciales.length > 0) {
+        if (usuariosIniciales.length > 0) {
             console.log(`   Ejemplo en DB: ${usuariosIniciales[0].nombre} ${usuariosIniciales[0].apellidos} (${usuariosIniciales[0].perfil})`);
         }
 
