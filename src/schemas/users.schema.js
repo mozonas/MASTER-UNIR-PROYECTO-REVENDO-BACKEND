@@ -1,16 +1,50 @@
 const yup = require('yup');
 
-const userSchema = yup.object().shape({
-    nombre: yup.string().strict().trim().min(1, "El nombre no puede estar vacío").max(100).required("El nombre es obligatorio"),
-    apellidos: yup.string().strict().trim().min(1, "Los apellidos no pueden estar vacíos").max(200).required("Los apellidos son obligatorios"),
-    email: yup.string().strict().email("Email inválido").max(100).required("El email es obligatorio"),
-    usuario: yup.string().strict().trim().min(1, "El usuario no puede estar vacío").max(100).required("El usuario es obligatorio"),
-    password: yup.string().strict().trim().min(1, "La contraseña no puede estar vacía").max(100).required("La contraseña es obligatoria"),
-    foto: yup.string().strict().url("La foto debe ser una URL válida").max(300).nullable(),
-    fecha_nacimiento: yup.string().strict().trim().min(1, "La fecha no puede estar vacía").max(45).required("La fecha de nacimiento es obligatoria"),
-    direccion: yup.string().strict().trim().min(1, "La dirección no puede estar vacía").max(200).required("La dirección es obligatoria")
+/**
+ * Esquema de validación para el registro o edición de usuarios
+ */
+const userSchema = yup.object({
+    body: yup.object({
+        nombre: yup.string()
+            .trim()
+            .required('El nombre es obligatorio')
+            .min(2, 'El nombre debe tener al menos 2 caracteres')
+            .max(50, 'El nombre no puede exceder los 50 caracteres'),
+
+        apellidos: yup.string()
+            .trim()
+            .required('Los apellidos son obligatorios')
+            .min(2, 'Los apellidos deben tener al menos 2 caracteres')
+            .max(100, 'Los apellidos no pueden exceder los 100 caracteres'),
+
+        email: yup.string()
+            .trim()
+            .required('El correo electrónico es obligatorio')
+            .email('El formato del correo electrónico no es válido')
+            .max(100, 'El correo no puede exceder los 100 caracteres'),
+
+        usuario: yup.string()
+            .trim()
+            .required('El nombre de usuario es obligatorio')
+            .min(3, 'El nombre de usuario debe tener al menos 3 caracteres')
+            .max(30, 'El nombre de usuario no puede exceder los 30 caracteres')
+            .matches(/^[a-zA-Z0-9_.]+$/, 'El usuario solo puede contener letras, números, puntos y guiones bajos'),
+
+        foto: yup.string()
+            .trim()
+            .nullable() // Permite que sea null si el usuario no sube foto
+            .url('La foto debe ser una URL válida o el nombre de un archivo'),
+
+        perfil: yup.string()
+            .oneOf(['USUARIO', 'MODERADOR', 'ADMIN'], 'El perfil seleccionado no es válido')
+            .default('USUARIO'),
+
+        fecha_nacimiento: yup.date()
+            .nullable() // Permite que venga vacío
+            .typeError('La fecha de nacimiento debe ser una fecha válida')
+    })
 });
 
-
-
-module.exports = { userSchema };
+module.exports = {
+    userSchema
+};

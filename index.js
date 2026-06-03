@@ -1,21 +1,22 @@
-// Creación y configuración del servidor
-const http = require("node:http");
-const app = require("./src/app");
+// Cargamos las variables de entorno (.env) antes de cualquier otra cosa
+require('dotenv').config();
 
-// Config .env
-require("dotenv").config();
+const http = require('http');
+const app = require('./src/app');
 
-// Creación del servidor
+// Configuramos el puerto 3000
+const PORT = process.env.PORT || 3000;
+
+// Creamos el servidor HTTP pasando nuestra app de Express
 const server = http.createServer(app);
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT);
-
-// Listeners
-server.on("listening", () => {
-    console.log(`Server listening on port ${PORT}`);
+// Ponemos al servidor a escuchar
+server.listen(PORT, () => {
+    console.log(`\n🚀 Servidor de Revendo Backend corriendo en: http://localhost:${PORT}`);
+    console.log(`📡 Esperando peticiones desde el frontend en el puerto 4200...\n`);
 });
 
-server.on("error", (error) => {
-    console.log(error);
+// Manejo básico de errores por si el puerto está ocupado
+server.on('error', (error) => {
+    console.error('❌ Error en el servidor de Node:', error.message);
 });

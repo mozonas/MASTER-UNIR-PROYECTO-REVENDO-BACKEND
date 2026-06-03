@@ -1,9 +1,10 @@
 const UserModel = require('../models/users.model');
+const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 
 const getAll = async (req, res) => {
     try {
-        const users = await UserModel.selectAll();
+        const users = await UserModel.getAll();
         res.json(users);
     } catch (error) {
         console.log(error);
@@ -13,50 +14,91 @@ const getAll = async (req, res) => {
     }
 }
 
-const getById = (req, res) => {
-    res.json(req.user);
-}
+const getById = async (req, res) => {
+    try {
+        // Extraemos el usuario inyectado limpiamente por el middleware checkUserId
+        const usuario = req.usuarioEncontrado;
+        res.json(usuario);
+    } catch (error) {
+        console.error('Error en getById controller:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener el usuario' });
+    }
+};
 
 const create = async (req, res) => {
-    // req.body -> { name: '...', email: '...', password: '...' }
-    const result = await UserModel.insert(req.body)
-    const newUser = await UserModel.selectById(result.insertId);
+    try {
+        const result = await UserModel.insert(req.body);
+        const newUser = await UserModel.getById(result.insertId);
 
-    if (!newUser) {
-        return res.status(404).json({ message: 'No existe el usuario con ese ID' });
+        if (!newUser) {
+            return res.status(404).json({ message: 'No existe el usuario con ese ID' });
+        }
+        res.status(201).json(newUser);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al crear el usuario' });
     }
-
-    res.status(201).json(newUser);
 }
 
 const edit = async (req, res) => {
-    // req.body 
-    // req.params.userId
-    const { body, params: { userId } } = req;
+    try {
+        const { userId } = req.params;
+        const { nombre, apellidos, email, usuario, foto, fecha_nacimiento, perfil, direccion } = req.body;
 
-    const result = await UserModel.updateById(userId, body);
-    const user = await UserModel.selectById(userId);
+        await db.query(
+            `UPDATE usuarios 
+             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ? 
+             WHERE id = ?`,
+            [
+                nombre || null, 
+                apellidos || null, 
+                email || null, 
+                usuario || null, 
+                foto || null, 
+                fecha_nacimiento || null, 
+                perfil || 'USUARIO', 
+                direccion || null, 
+                userId
+            ]
+        );
 
-    res.json(user);
+        // Recuperamos el usuario actualizado usando el método real del modelo
+        const userUpdated = await UserModel.getById(userId);
+        res.json({ message: 'Usuario actualizado correctamente', user: userUpdated });
+
+    } catch (error) {
+        console.error('Error en edit controller:', error);
+        res.status(500).json({ message: 'Error interno en el servidor al actualizar el usuario' });
+    }
 }
 
 const remove = async (req, res) => {
-    const { userId } = req.params;
-
-    const result = await UserModel.deleteById(userId);
-
-    res.json(req.user);
+    try {
+        const { userId } = req.params;
+        
+        // 🔄 Borrado directo en la base de datos
+        await db.query('DELETE FROM usuarios WHERE id = ?', [userId]);
+        res.json({ message: 'Usuario eliminado correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar el usuario' });
+    }
 }
 
 //31052026 - F4eature Login/SignUp
 const register = async (req, res) => {
-    // Body: username, email, password
-    req.body.password = bcrypt.hashSync(req.body.password, 8);
+    try {
+        // Body: username, email, password
+        req.body.password = bcrypt.hashSync(req.body.password, 8);
 
-    const result = await UserModel.insert(req.body);
-    res.json({
-        message: 'Registro completo'
-    });
+        const result = await UserModel.insert(req.body);
+        res.json({
+            message: 'Registro completo'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error en el registro' });
+    }
 }
 
 module.exports = {
