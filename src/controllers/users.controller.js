@@ -43,11 +43,11 @@ const create = async (req, res) => {
 const edit = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { nombre, apellidos, email, usuario, foto, fecha_nacimiento, perfil, direccion } = req.body;
+        const { nombre, apellidos, email, usuario, foto, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
 
         await db.query(
             `UPDATE usuarios 
-             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ? 
+             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
              WHERE id = ?`,
             [
                 nombre || null, 
@@ -58,6 +58,7 @@ const edit = async (req, res) => {
                 fecha_nacimiento || null, 
                 perfil || 'USUARIO', 
                 direccion || null, 
+                descripcion || null,
                 userId
             ]
         );
@@ -76,7 +77,7 @@ const remove = async (req, res) => {
     try {
         const { userId } = req.params;
         
-        // 🔄 Borrado directo en la base de datos
+        // Borrado directo en la base de datos
         await db.query('DELETE FROM usuarios WHERE id = ?', [userId]);
         res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
