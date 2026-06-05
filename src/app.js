@@ -5,6 +5,9 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+app.use('/api', require('./routes/api'));
+// Servir la carpeta public de forma estática para que las fotos sean accesibles por URL
+app.use('/uploads', express.static('public/uploads'));
 console.log('Aplicacion Express inicializada.');
 
 // Middleware para permitir peticiones desde tu frontend de Angular

@@ -43,21 +43,30 @@ const create = async (req, res) => {
 const edit = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { nombre, apellidos, email, usuario, foto, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
+        const { nombre, apellidos, email, usuario, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
+
+        // Usuario actual del middleware (checkUserId)
+        const usuarioActual = req.usuarioEncontrado;
+
+        // Si viene un archivo de Multer, usamos su nombre. Si no, dejamos la foto que ya tenía antes.
+        let fotoFinal = usuarioActual.foto;
+        if (req.file) {
+            fotoFinal = req.file.filename;
+        }
 
         await db.query(
             `UPDATE usuarios 
              SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
              WHERE id = ?`,
             [
-                nombre || null, 
-                apellidos || null, 
-                email || null, 
-                usuario || null, 
-                foto || null, 
-                fecha_nacimiento || null, 
-                perfil || 'USUARIO', 
-                direccion || null, 
+                nombre || null,
+                apellidos || null,
+                email || null,
+                usuario || null,
+                fotoFinal,
+                fecha_nacimiento || null,
+                perfil || 'USUARIO',
+                direccion || null,
                 descripcion || null,
                 userId
             ]
@@ -76,7 +85,7 @@ const edit = async (req, res) => {
 const remove = async (req, res) => {
     try {
         const { userId } = req.params;
-        
+
         // Borrado directo en la base de datos
         await db.query('DELETE FROM usuarios WHERE id = ?', [userId]);
         res.json({ message: 'Usuario eliminado correctamente' });
