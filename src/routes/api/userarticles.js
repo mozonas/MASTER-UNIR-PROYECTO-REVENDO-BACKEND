@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const userarticlesController = require('../../controllers/userarticles.controller');
+const articlesController = require('../../controllers/article.controller');
 
-router.get('/user/:userId', userarticlesController.getUserArticles);
+// When mounted under `/userarticles` from the main router,
+// expose the collection at the root path here.
+router.get('/', articlesController.getAllUserArticles);
 
 module.exports = router;

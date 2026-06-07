@@ -1,31 +1,22 @@
-/*
-1. Importar el modelo de articulo
-2. Funcion para listar todos los articulos
-3. Funcion para buscar un articulo especifico por su id
-4. Funcion para guardar el nuevo articulo en la base de datos
-5. Funcion para modificar un articulo existente
-6. Funcion para eliminar un articulo por su id
-7. Exportar las funciones para ser utilizadas en las rutas
-*/
+const { getAll, getUserArticles } = require('../models/article.model');
 
-// 1. Importar el modelo de articulo
-const Article = require('../models/article.model');
-
-// 2. Funcion para listar todos los articulos
-exports.getAll = async (req, res) => {
-    console.log('Controlador: Obteniendo todos los articulos...');
+const getAllUserArticles = async (req, res) => {
     try {
-        const articles = await Article.findAll();
-        console.log('Controlador: Articulos obtenidos:', articles);
-        res.status (200).json({
+        const rawArticles = await getAll();
+
+        return res.status(200).json({
             status: 'success',
-            data: articles  
+            data: rawArticles
         });
     } catch (error) {
-        console.error('Controlador: Error al obtener los articulos:', error);
-        res.status(500).json({
+        console.error('Error al obtener los artículos:', error);
+        return res.status(500).json({
             status: 'error',
-            message: 'Error al obtener los articulos'
+            message: 'Error al obtener los artículos'
         });
     }
+};
+
+module.exports = {
+    getAllUserArticles
 };

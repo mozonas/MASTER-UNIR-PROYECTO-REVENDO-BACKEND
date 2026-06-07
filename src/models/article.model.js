@@ -1,27 +1,25 @@
-/* 
-1. Importar conexion a la base de datos
-2. Obtner los articulos
-3. Crear nuevo articulo
-4. Eliminar articulo
-5. Actualizar articulo
-6. Exportar el modelo
+const pool = require('../config/db');
 
-*/
+getAll = async () => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM articulos');
+        return rows;
+    } catch (error) {
+        console.error('Error al obtener los artículos GetAll:', error);
+        throw error;
+    }   };
 
-
-// 1.Importar conexion a la base de datos
-const db = require('../config/db');
-
-// 2. Obtener los articulos
-const Article = {
-findAll: async () => {
-    console.log('Obteniendo articulos...');
-    const sql = 'SELECT * FROM articles'; // Confirmar que la tabla se llama articles
-    const [rows] = await db.query(sql);
-    console.log('Articulos obtenidos:', rows);
-    return rows;
+getUserArticles = async (userId) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM articulos WHERE usuarios_id = ?', [userId]);
+        return rows;
+    } catch (error) {
+        console.error('Error al obtener los artículos del usuario:', error);
+        throw error;
     }
 };
 
-// 6. Exportar el modelo
-module.exports = Article;
+module.exports = {
+    getAll,
+    getUserArticles
+};
