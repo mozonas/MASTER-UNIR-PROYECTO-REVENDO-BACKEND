@@ -1,6 +1,7 @@
 const router = require('express').Router();
-const { getAll, create, remove, edit, getById } = require('../../controllers/users.controller');
+const { getAll, create, remove, edit, getById, getStatistics } = require('../../controllers/users.controller');
 const { checkUserId } = require('../../middlewares/users.middleware');
+
 const { validateSchema } = require('../../middlewares/validations.middleware');
 const { userSchema } = require('../../schemas/users.schema.js');
 
@@ -13,5 +14,7 @@ router.get('/:userId', checkUserId, getById);
 router.post('/', validateSchema(userSchema), create);
 router.put('/:userId', checkUserId, upload.single('foto'), edit); 
 router.delete('/:userId', checkUserId, remove);
+
+router.get('/:userId/estadisticas', checkUserId, getStatistics);
 
 module.exports = router;

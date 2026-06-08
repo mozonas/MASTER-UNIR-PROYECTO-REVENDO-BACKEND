@@ -23,4 +23,22 @@ const selectByEmail = async (email) => {
     return rows[0];
 }
 
-module.exports = { getAll, getById, insert, selectByEmail };
+// Función para obtener estadísticas de un usuario
+const getStats = async (id) => {
+    const query = `
+        SELECT 
+            (SELECT COUNT(*) FROM articulos WHERE usuarios_id = u.id AND estadoVenta = 'VENDIDO') AS total_vendidos,
+            COUNT(v.id) AS total_valoraciones,
+            IFNULL(ROUND(AVG(v.puntuacion), 1), 0.0) AS rating_media
+        FROM usuarios u
+        LEFT JOIN articulos a ON a.usuarios_id = u.id
+        LEFT JOIN transacciones t ON t.articulos_id = a.id
+        LEFT JOIN valoraciones v ON v.transacciones_id = t.id
+        WHERE u.id = ?
+        GROUP BY u.id;
+    `;
+    const [rows] = await db.query(query, [String(id)]);
+    return rows[0];
+}
+
+module.exports = { getAll, getById, insert, selectByEmail, getStats };

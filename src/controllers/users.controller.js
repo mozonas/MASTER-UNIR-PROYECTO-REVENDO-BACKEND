@@ -111,6 +111,28 @@ const register = async (req, res) => {
     }
 }
 
+// Nueva función controladora para la ruta de estadísticas
+const getStatistics = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const stats = await UserModel.getStats(userId);
+
+        // Si el usuario no tiene ninguna interacción aún, devolvemos contadores a cero de forma segura
+        if (!stats) {
+            return res.json({
+                total_vendidos: 0,
+                total_valoraciones: 0,
+                rating_media: 0.0
+            });
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error('Error en getStatistics controller:', error);
+        res.status(500).json({ message: 'Error en el servidor al calcular estadísticas reales.' });
+    }
+}
+
 module.exports = {
-    getAll, getById, create, edit, remove, register
+    getAll, getById, create, edit, remove, register, getStatistics
 }
