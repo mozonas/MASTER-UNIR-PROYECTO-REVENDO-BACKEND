@@ -3,7 +3,7 @@ const TransactionModel = require ('../models/transactions.model');
 const checkTransactionId = async (req, res, next)=>{
     const {transaccionId} = req.params;
     if (isNaN(transaccionId)){
-        return res.status(400).json({message: 'El id del cliente debe ser un numero'});
+        return res.status(400).json({message: 'El id de la transacción debe ser un numero'});
     }
     const transaccion = await TransactionModel.selectById(transaccionId);
     if (!transaccion){
@@ -17,6 +17,4 @@ const checkTransactionId = async (req, res, next)=>{
 
 }
 
-module.exports ={
-    checkTransactionId
-}
+module.exports ={ checkTransactionId }

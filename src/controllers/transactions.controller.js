@@ -27,27 +27,18 @@ const getById = async (req, res) =>{
 
 }
 
-const getByMonth =async (req, res) => {
-  try {
-    const { year } = req.query;
 
-    if (!year) {
-      return res.status(400).json({ error: 'Debes enviar el parámetro year' });
-    }
-
-    const data = await TransaccionesModel.selectByMonth(year);
-    res.json(data);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error obteniendo transacciones por mes' });
-  }
-}
 
 const getByYear = async (req,res) =>{
     try {
       const { year } = req.query;
-      const ventasAnuales = await TransactionModel.getFechasByYear(year);
+      if(!year){
+        return res.status (400).json ({
+            message: 'el parámetro es obligatorio'
+        })
+      }
+      
+      const ventasAnuales = await TransactionModel.selectByYear(year);
       res.json(ventasAnuales);
     } catch (error) {
       console.error(error);
@@ -56,16 +47,6 @@ const getByYear = async (req,res) =>{
 
 }
 
-const getByYears = async (req,res) =>{
-    try{
-        const {yearA, yearB} = req.query;
-        const ventasCompare = await TransactionModel.selectByYears(yearA, yearB)
-        res.json (ventasCompare);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error obteniendo comparación de años' });
-    }
-}
 
 const create = async (req,res) =>{
     try {
@@ -115,9 +96,7 @@ const remove = async (req,res) =>{
 module.exports ={
     getAll,
     getById,
-    getByMonth,
     getByYear,
-    getByYears,
     create,
     edit,
     remove

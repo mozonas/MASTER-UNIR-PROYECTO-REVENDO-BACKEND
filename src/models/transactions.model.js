@@ -13,42 +13,28 @@ const selectById = async (id)=> {
         return result 
 };
 
-//** Obtener las transacciones anuales */
-const selectByYear = async (year) =>{
-    const [result] = await db.query (
-        'SELECT fecha FROM transacciones WHERE YEAR(fecha)= ? ORDER BY fecha ASC',
-        [year]
-    );
-    return result [0];
-};
 
 //** Obtener transacciones mensuales por año */
-const selectByMonth = async (year)=>{
-    const [result] = await db.query(`
+const selectByYear = async (year)=>{
+    const [rows] = await db.query(`
     SELECT MONTH (fecha) AS mes, COUNT(*) AS total
     FROM transacciones
     WHERE YEAR (fecha)=?
     GROUP BY mes
     ORDER BY mes ASC`, 
     [year]);
-    return result;
+
+    const ventas = Array(12).fill(0);
+
+    rows.forEach (row =>{ 
+        ventas[row.mes -1] = row.total;
+    });
+
+    return {ventas};
 }
 
-//**Obtener transacciones por mes de dos años diferentes */
-const selectByYears = async (yearA, yearB) => {
-  const [result] = await db.query(`
-    SELECT 
-      YEAR(fecha) AS year,
-      MONTH(fecha) AS mes,
-      COUNT(*) AS total
-    FROM transacciones
-    WHERE YEAR(fecha) IN (?, ?)
-    GROUP BY year, mes
-    ORDER BY year, mes
-  `, [yearA, yearB]);
-  return result;
-}
 
+//**Nueva transacción en la tabla con id usuario y articulo y fecha */
 const insert = async (fecha, usuarios_id, articulos_id)=>{
     const [result] = await db.query (`
         INSERT INTO transacciones (fecha, usuarios_id, articulos_id)
@@ -57,6 +43,7 @@ const insert = async (fecha, usuarios_id, articulos_id)=>{
         return result
 }
 
+//**Midifcar datos de la transacción */
 const updateById = async (transaccionesId, {fecha, usuarios_id, articulos_id})=>{
     const [result] = await db.query(
         `UPDATE FROM transacciones SET
@@ -68,9 +55,7 @@ const updateById = async (transaccionesId, {fecha, usuarios_id, articulos_id})=>
     return result.affectedRows
 }
 
-
-
-
+//**Borrado de la transacción */
 const deleteById = async (id)=> {
     const [result] = await db.query(`
         DELETE FROM transacciones
@@ -83,9 +68,7 @@ const deleteById = async (id)=> {
 module.exports ={
     selectAll,
     selectById,
-    selectByMonth,
     selectByYear,
-    selectByYears,
     insert,
     updateById,
     deleteById

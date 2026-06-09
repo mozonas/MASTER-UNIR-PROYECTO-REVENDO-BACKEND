@@ -9,7 +9,8 @@ router.use('/signup', require('./api/signup'));
 router.use('/login', require('./api/login'));
 
 //router.use('/messages', require('./api/messages'));
-//router.use('/transactions', require('./api/transactions'))
+
+router.use ('/transactions', require ('./api/transactions'))
 
 
 
