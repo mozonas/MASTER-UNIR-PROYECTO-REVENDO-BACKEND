@@ -133,6 +133,26 @@ const getStatistics = async (req, res) => {
     }
 }
 
+const getValoraciones = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const valoraciones = await UserModel.getValoraciones(userId);
+
+        // 1. Primero validamos si está vacío
+        if (!valoraciones || valoraciones.length === 0) {
+            // Devolvemos un array vacío para que el frontend (listaValoraciones.length === 0) funcione correctamente
+            return res.json([]); 
+        }
+
+        // 2. Si tiene datos, los enviamos una sola vez
+        return res.json(valoraciones);
+
+    } catch (error) {
+        console.error('Error en getValoraciones controller:', error);
+        return res.status(500).json({ message: 'Error en el servidor al obtener valoraciones.' });
+    }
+}
+
 module.exports = {
-    getAll, getById, create, edit, remove, register, getStatistics
+    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
 }
