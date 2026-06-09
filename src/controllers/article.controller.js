@@ -18,5 +18,5 @@ const getAllUserArticles = async (req, res) => {
 };
 
 module.exports = {
-    getAllUserArticles
+    getAllUserArticles,
 };
