@@ -23,4 +23,43 @@ const selectByEmail = async (email) => {
     return rows[0];
 }
 
-module.exports = { getAll, getById, insert, selectByEmail };
+// Función para obtener estadísticas de un usuario
+const getStats = async (id) => {
+    const query = `
+        SELECT 
+            (SELECT COUNT(*) FROM articulos WHERE usuarios_id = u.id AND estadoVenta = 'VENDIDO') AS total_vendidos,
+            COUNT(v.id) AS total_valoraciones,
+            IFNULL(ROUND(AVG(v.puntuacion), 1), 0.0) AS rating_media
+        FROM usuarios u
+        LEFT JOIN articulos a ON a.usuarios_id = u.id
+        LEFT JOIN transacciones t ON t.articulos_id = a.id
+        LEFT JOIN valoraciones v ON v.transacciones_id = t.id
+        WHERE u.id = ?
+        GROUP BY u.id;
+    `;
+    const [rows] = await db.query(query, [String(id)]);
+    return rows[0];
+}
+
+const getValoraciones = async (id) => {
+    const query = `
+        SELECT 
+            v.id AS valoracion_id,
+            v.puntuacion,
+            v.comentario,
+            v.fecha AS fecha_valoracion,
+            a.titulo AS articulo_titulo,
+            u_comprador.usuario AS comprador_username,
+            u_comprador.foto AS comprador_foto
+        FROM valoraciones v
+        JOIN transacciones t ON v.transacciones_id = t.id
+        JOIN articulos a ON t.articulos_id = a.id
+        JOIN usuarios u_comprador ON t.usuarios_id = u_comprador.id
+        WHERE a.usuarios_id = ?  -- ID del usuario del perfil (Alejandro, por ejemplo)
+        ORDER BY v.fecha DESC;
+    `;
+    const [rows] = await db.query(query, [String(id)]);
+    return rows;
+}
+
+module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones };
