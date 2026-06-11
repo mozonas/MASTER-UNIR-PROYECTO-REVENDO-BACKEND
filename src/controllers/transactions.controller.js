@@ -27,19 +27,37 @@ const getById = async (req, res) =>{
 
 }
 
+const getByMonth = async (req,res) =>{
+    try {
+        const {month} = req.params;
+        const year = new Date().getFullYear()
+        if(!month){
+            return res.status (400).json ({
+            message: 'parámetro month no recibido'
+        })
+    }
+        const ventasMensuales = await TransactionModel.selectByMonth (month, year)
+        res.json (ventasMensuales)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
+        }
+}
 
 
 const getByYear = async (req,res) =>{
     try {
-      const { year } = req.query;
+      const { year } = req.params;
+      
       if(!year){
         return res.status (400).json ({
-            message: 'el parámetro es obligatorio'
+            message: 'parámetro year no recibido'
         })
       }
-      
+
       const ventasAnuales = await TransactionModel.selectByYear(year);
       res.json(ventasAnuales);
+      
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Error obteniendo fechas por año' });
@@ -96,6 +114,7 @@ const remove = async (req,res) =>{
 module.exports ={
     getAll,
     getById,
+    getByMonth,
     getByYear,
     create,
     edit,

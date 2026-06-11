@@ -13,10 +13,37 @@ const selectById = async (id)=> {
         return result 
 };
 
+//Obtener ventas diarias de un mes
+
+//--FUNCION PARA OBTENER DIAS REALES DEL MES--//
+function getDiasMes(month, year) {
+  return new Date(year, month, 0).getDate();
+}
+
+const selectByMonth = async (month, year) =>{
+    const [result] = await db.query (`
+        SELECT day (fecha) AS dia, COUNT(*) AS total
+        FROM transacciones
+        WHERE MONTH (fecha) =? AND YEAR (fecha)=?
+        GROUP BY dia
+        ORDER BY dia ASC`, 
+        [month,year]);
+
+
+        const totalDias = getDiasMes(month,year);
+        const dias = Array(totalDias).fill(0);
+        // Rellenar los días que sí tienen ventas
+        result.forEach(row => {
+          dias[row.dia-1] = row.total; // numero de ventas
+        });
+        // array de 30 posiciones correspondientes a un dia del mes con el numero de ventas diarias
+        return {ventas: dias};
+
+}
 
 //** Obtener transacciones mensuales por año */
 const selectByYear = async (year)=>{
-    const [rows] = await db.query(`
+    const [result] = await db.query(`
     SELECT MONTH (fecha) AS mes, COUNT(*) AS total
     FROM transacciones
     WHERE YEAR (fecha)=?
@@ -24,9 +51,15 @@ const selectByYear = async (year)=>{
     ORDER BY mes ASC`, 
     [year]);
 
+    // Convierto en array
     const ventas = Array(12).fill(0);
+    
+    if (!result || result.length === 0) {
+       return { ventas };
+    }
 
-    rows.forEach (row =>{ 
+    // Obtengo las ventas de cada mes en cada posición correspondiente del array 
+    result.forEach (row =>{ 
         ventas[row.mes -1] = row.total;
     });
 
@@ -68,6 +101,7 @@ const deleteById = async (id)=> {
 module.exports ={
     selectAll,
     selectById,
+    selectByMonth,
     selectByYear,
     insert,
     updateById,
