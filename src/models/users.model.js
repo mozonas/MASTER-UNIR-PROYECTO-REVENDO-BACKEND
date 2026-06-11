@@ -62,4 +62,20 @@ const getValoraciones = async (id) => {
     return rows;
 }
 
-module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones };
+//mog 110626 -> Función para contar total de usuarios (para paginación)
+const getAllPaginated = async (limit, offset) => {
+    const [rows] = await db.query(
+        'SELECT id, nombre, apellidos, email, usuario, foto, fecha_nacimiento, direccion, perfil FROM usuarios LIMIT ? OFFSET ?',
+        [limit, offset]
+    );
+    return rows;
+};
+
+const countAll = async () => {
+    const [rows] = await db.query('SELECT COUNT(*) AS total FROM usuarios');
+    return rows[0].total;
+};
+
+
+
+module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones, getAllPaginated, countAll };

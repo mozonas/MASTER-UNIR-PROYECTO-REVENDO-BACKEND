@@ -45,3 +45,21 @@ Content-Type: application/json
   "email": "usuario@correo.com",
   "password": "123456"
 }
+
+
+## Peticiones de listado de usuarios de admin
+## mog 11062026
+
+### LOGIN CORRECTO para obtener token de admin
+POST http://localhost:3000/api/login
+Content-Type: application/json
+
+{
+  "email": "administrador1@revendo.com",
+  "password": "123456"
+}
+
+
+### Obtener usuarios (página 1, 20 resultados)
+GET http://localhost:3000/api/admin/users?page=1&limit=20
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQyLCJ1c2VybmFtZSI6ImFkbWluaXN0cmFkb3IxIiwiZW1haWwiOiJhZG1pbmlzdHJhZG9yMUByZXZlbmRvLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiaWF0IjoxNzgxMTg1MDU5fQ.1fA3llrG8TWxMckNxf2QO4xLKVf_RzbUovry6ojBAKQ
