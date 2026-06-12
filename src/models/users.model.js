@@ -77,5 +77,34 @@ const countAll = async () => {
 };
 
 
+// Eliminar usuario
+const deleteUser = async (id) => {
+    const [result] = await db.query(
+        'DELETE FROM usuarios WHERE id = ?',
+        [String(id)]
+    );
+    return result;
+};
 
-module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones, getAllPaginated, countAll };
+// Bloquear / desbloquear usuario
+const toggleBlock = async (id, isBlocked) => {
+    const [result] = await db.query(
+        'UPDATE usuarios SET isBlocked = ? WHERE id = ?',
+        [isBlocked, String(id)]
+    );
+    return result;
+};
+
+
+module.exports = { 
+    getAll, 
+    getById, 
+    insert, 
+    selectByEmail, 
+    getStats, 
+    getValoraciones, 
+    getAllPaginated, 
+    countAll,
+    deleteUser,
+    toggleBlock
+};

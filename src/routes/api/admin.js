@@ -1,10 +1,14 @@
 const router = require('express').Router();
 const { checkAdminToken } = require('../../middlewares/auth.middleware');
-const { getAllUsers} = require('../../controllers/admin.controller');
+const { getAllUsers, deleteUser, toggleBlockUser } = require('../../controllers/admin.controller');
 
-// Rutas de /api/admin
+// GET usuarios
 router.get('/users', checkAdminToken, getAllUsers);
 
-//router.delete('/users/:userId', checkAdminToken, deleteUser);
+// DELETE usuario
+router.delete('/users/:id', checkAdminToken, deleteUser);
+
+// BLOQUEAR / DESBLOQUEAR usuario
+router.put('/users/:id', checkAdminToken, toggleBlockUser);
 
 module.exports = router;
