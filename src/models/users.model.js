@@ -65,7 +65,7 @@ const getValoraciones = async (id) => {
 //mog 110626 -> Función para contar total de usuarios (para paginación)
 const getAllPaginated = async (limit, offset) => {
     const [rows] = await db.query(
-        'SELECT id, nombre, apellidos, email, usuario, foto, fecha_nacimiento, direccion, perfil FROM usuarios LIMIT ? OFFSET ?',
+        'SELECT id, nombre, apellidos, email, usuario, foto, fecha_nacimiento, direccion, perfil,isBlocked FROM usuarios LIMIT ? OFFSET ?',
         [limit, offset]
     );
     return rows;
