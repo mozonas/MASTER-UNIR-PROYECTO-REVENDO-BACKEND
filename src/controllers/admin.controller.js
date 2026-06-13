@@ -53,8 +53,65 @@ const toggleBlockUser = async (req, res) => {
   }
 };
 
+// ===============================
+//   BUSCAR POR ID (único)
+// ===============================
+const searchById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await userModel.getById(id);
+
+    return res.json({ user: user || null });
+
+  } catch (error) {
+    console.error('Error buscando usuario por ID:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+
+// ===============================
+//   BUSCAR POR USERNAME (único)
+// ===============================
+const searchByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await userModel.getByUsername(username);
+
+    return res.json({ user: user || null });
+
+  } catch (error) {
+    console.error('Error buscando usuario por username:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+
+// ===============================
+//   BUSCAR POR EMAIL (único)
+// ===============================
+const searchByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const user = await userModel.getByEmail(email);
+
+    return res.json({ user: user || null });
+
+  } catch (error) {
+    console.error('Error buscando usuario por email:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+
 module.exports = {
   getAllUsers,
   deleteUser,
-  toggleBlockUser
+  toggleBlockUser,
+  searchById,
+  searchByUsername,
+  searchByEmail
 };

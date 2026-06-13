@@ -95,6 +95,28 @@ const toggleBlock = async (id, isBlocked) => {
     return result;
 };
 
+// ===============================
+//   BUSCAR POR USERNAME (único)
+// ===============================
+const getByUsername = async (username) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE usuario = ?',
+        [username]
+    );
+    return rows[0]; // único usuario
+};
+
+
+// ===============================
+//   BUSCAR POR EMAIL (único)
+// ===============================
+const getByEmail = async (email) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE email = ?',
+        [email]
+    );
+    return rows[0]; // único usuario
+};
 
 module.exports = { 
     getAll, 
@@ -106,5 +128,7 @@ module.exports = {
     getAllPaginated, 
     countAll,
     deleteUser,
-    toggleBlock
+    toggleBlock,
+    getByUsername,
+    getByEmail
 };
