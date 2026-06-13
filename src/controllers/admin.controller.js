@@ -1,4 +1,6 @@
 const userModel = require('../models/users.model');
+const categoryModel = require('../models/categories.model');
+
 
 const getAllUsers = async (req, res) => {
   try {
@@ -106,6 +108,92 @@ const searchByEmail = async (req, res) => {
   }
 };
 
+// ===============================
+//   GET categorías (paginado)
+// ===============================
+const getCategoriesPaginated = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const categories = await categoryModel.getAllPaginated(limit, offset);
+    const total = await categoryModel.countAll();
+
+    return res.json({
+      categories,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo categorías paginadas:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// ===============================
+//   POST crear categoría
+// ===============================
+const createCategory = async (req, res) => {
+  try {
+    const { nombre } = req.body;
+
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ message: 'El nombre es obligatorio' });
+    }
+
+    await categoryModel.insert(nombre.trim());
+
+    return res.json({ message: 'Categoría creada correctamente' });
+
+  } catch (error) {
+    console.error('Error creando categoría:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// ===============================
+//   PUT actualizar categoría
+// ===============================
+const updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre } = req.body;
+
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ message: 'El nombre es obligatorio' });
+    }
+
+    await categoryModel.update(id, nombre.trim());
+
+    return res.json({ message: 'Categoría actualizada correctamente' });
+
+  } catch (error) {
+    console.error('Error actualizando categoría:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// ===============================
+//   DELETE eliminar categoría
+// ===============================
+const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await categoryModel.remove(id);
+
+    return res.json({ message: 'Categoría eliminada correctamente' });
+
+  } catch (error) {
+    console.error('Error eliminando categoría:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
 
 module.exports = {
   getAllUsers,
@@ -113,5 +201,9 @@ module.exports = {
   toggleBlockUser,
   searchById,
   searchByUsername,
-  searchByEmail
+  searchByEmail,
+  getCategoriesPaginated,
+  createCategory,
+  updateCategory,
+  deleteCategory
 };

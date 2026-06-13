@@ -6,7 +6,11 @@ const {
   toggleBlockUser,
   searchById,
   searchByUsername,
-  searchByEmail
+  searchByEmail,
+  getCategoriesPaginated,
+  createCategory,
+  updateCategory,
+  deleteCategory
 } = require('../../controllers/admin.controller');
 
 // GET usuarios
@@ -26,5 +30,23 @@ router.delete('/users/:id', checkAdminToken, deleteUser);
 
 // BLOQUEAR / DESBLOQUEAR usuario
 router.put('/users/:id', checkAdminToken, toggleBlockUser);
+
+
+//CATEGORÍAS
+// ===============================
+//        CATEGORÍAS (ADMIN)
+// ===============================
+
+// LISTAR categorías (paginado)
+router.get('/categories', checkAdminToken, getCategoriesPaginated);
+
+// CREAR categoría
+router.post('/categories', checkAdminToken, createCategory);
+
+// ACTUALIZAR categoría
+router.put('/categories/:id', checkAdminToken, updateCategory);
+
+// ELIMINAR categoría
+router.delete('/categories/:id', checkAdminToken, deleteCategory);
 
 module.exports = router;
