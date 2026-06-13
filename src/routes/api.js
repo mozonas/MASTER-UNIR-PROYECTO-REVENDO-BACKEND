@@ -9,6 +9,9 @@ router.use('/signup', require('./api/signup'));
 router.use('/login', require('./api/login'));
 router.use('/reports', require('./api/reports'));
 router.use('/userarticles', require('./api/userarticles'));
+//mog 110626 -> Ruta admin
+router.use('/admin', require('./api/admin'));
+
 // router.use('/moderation', require('./api/moderation'));
 
 //router.use('/messages', require('./api/messages'));
