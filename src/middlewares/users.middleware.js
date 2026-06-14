@@ -1,4 +1,3 @@
-// 🔄 CORREGIDO: Cambiado de users.models (con S) a users.model (en singular)
 const usersModel = require('../models/users.model');
 
 const checkUserId = async (req, res, next) => {
