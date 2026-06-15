@@ -38,7 +38,30 @@ getUserArticles = async (userId) => {
     }
 };
 
+updateArticle = async (articleId, updatedData) => {
+    try {
+        const [result] = await pool.query('UPDATE articulos SET ? WHERE id = ?', [updatedData, articleId]);
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error al actualizar el artículo:', error);
+        throw error;
+    }
+
+};
+
+deleteArticle = async (articleId) => {
+    try {
+        const [result] = await pool.query('DELETE FROM articulos WHERE id = ?', [articleId]);
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error al eliminar el artículo:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     getAll,
-    getUserArticles
+    getUserArticles,
+    updateArticle,
+    deleteArticle
 };
