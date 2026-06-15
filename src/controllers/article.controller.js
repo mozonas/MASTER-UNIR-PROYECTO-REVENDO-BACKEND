@@ -1,6 +1,4 @@
-const { getUserArticles } = require('../models/article.model');
-const { updateArticle } = require('../models/article.model');
-const { deleteArticle } = require('../models/article.model');
+const { getAll, getArticleById,getUserArticles,updateArticle,deleteArticle } = require('../models/article.model');
 
 const getAllUserArticles = async (req, res) => {
     const userId = req.params.userId;
@@ -61,8 +59,28 @@ const eraseArticle = async (req, res) => {
     }
 };
 
+const getById = async (req, res) => {
+     try {
+        const { id } = req.params;
+        const rawArticle = await getArticle(id);
+
+        return res.status(200).json({
+            status: 'success',
+            data: rawArticle
+        });
+    } catch (error) {
+        console.error('Error al obtener el artículo:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Error al obtener el artículo'
+        });
+    } 
+};
+
 module.exports = {
     getAllUserArticles,
     editArticle,
-    eraseArticle
+    eraseArticle,
+    getById
+
 };
