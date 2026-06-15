@@ -46,20 +46,22 @@ getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
-      a.*, u.nombre AS nombre_vendedor, 
-      u.apellidos AS apellidos_vendedor, 
-      u.email AS email_vendedor, 
-      u.usuario AS usuario_vendedor, 
-      u.direccion AS direccion_vendedor, 
-      u.isBlocked AS isBlocked_vendedor, 
-      u.perfil AS perfil_vendedor 
-      FROM articulos a 
-      INNER JOIN usuarios u 
-      ON u.id = a.usuarios_id 
-      WHERE a.id = ?`,
+a.*, u.nombre AS nombre_vendedor, 
+u.apellidos AS apellidos_vendedor, 
+u.email AS email_vendedor, 
+u.usuario AS usuario_vendedor, 
+u.direccion AS direccion_vendedor, 
+u.isBlocked AS isBlocked_vendedor, 
+u.perfil AS perfil_vendedor,
+c.nombre AS categoria
+FROM articulos a 
+INNER JOIN usuarios u
+    ON u.id = a.usuarios_id 
+INNER JOIN categorias c
+    ON a.categorias_id = c.id where a.id = ?`,
       [id],
     );
-console.log("Artículo obtenido:", rows[0]);
+    console.log("Artículo obtenido:", rows[0]);
     return rows[0];
   } catch (error) {
     console.error("Error al obtener el artículo:", error);
