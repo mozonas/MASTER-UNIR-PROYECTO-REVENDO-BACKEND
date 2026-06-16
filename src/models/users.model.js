@@ -62,4 +62,73 @@ const getValoraciones = async (id) => {
     return rows;
 }
 
-module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones };
+//mog 110626 -> Función para contar total de usuarios (para paginación)
+const getAllPaginated = async (limit, offset) => {
+    const [rows] = await db.query(
+        'SELECT id, nombre, apellidos, email, usuario, foto, fecha_nacimiento, direccion, perfil,isBlocked FROM usuarios LIMIT ? OFFSET ?',
+        [limit, offset]
+    );
+    return rows;
+};
+
+const countAll = async () => {
+    const [rows] = await db.query('SELECT COUNT(*) AS total FROM usuarios');
+    return rows[0].total;
+};
+
+
+// Eliminar usuario
+const deleteUser = async (id) => {
+    const [result] = await db.query(
+        'DELETE FROM usuarios WHERE id = ?',
+        [String(id)]
+    );
+    return result;
+};
+
+// Bloquear / desbloquear usuario
+const toggleBlock = async (id, isBlocked) => {
+    const [result] = await db.query(
+        'UPDATE usuarios SET isBlocked = ? WHERE id = ?',
+        [isBlocked, String(id)]
+    );
+    return result;
+};
+
+// ===============================
+//   BUSCAR POR USERNAME (único)
+// ===============================
+const getByUsername = async (username) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE usuario = ?',
+        [username]
+    );
+    return rows[0]; // único usuario
+};
+
+
+// ===============================
+//   BUSCAR POR EMAIL (único)
+// ===============================
+const getByEmail = async (email) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE email = ?',
+        [email]
+    );
+    return rows[0]; // único usuario
+};
+
+module.exports = { 
+    getAll, 
+    getById, 
+    insert, 
+    selectByEmail, 
+    getStats, 
+    getValoraciones, 
+    getAllPaginated, 
+    countAll,
+    deleteUser,
+    toggleBlock,
+    getByUsername,
+    getByEmail
+};
