@@ -16,14 +16,21 @@ const getByArticulo = async (articulos_id) => {
 
 const getByUsuario = async (usuarios_id) => {
     const [rows] = await db.query(
-        `SELECT m.*, u.nombre, u.apellidos, u.foto, a.titulo as articulo_titulo
+        `SELECT a.id as articulos_id, a.titulo,
+         u.id as otro_usuario_id, u.nombre, u.foto,
+         (SELECT contenido FROM mensajes 
+          WHERE articulos_id = a.id 
+          ORDER BY created_at DESC LIMIT 1) as ultimo_mensaje,
+         (SELECT created_at FROM mensajes 
+          WHERE articulos_id = a.id 
+          ORDER BY created_at DESC LIMIT 1) as fecha_ultimo_mensaje
          FROM mensajes m
-         JOIN usuarios u ON m.usuarios_id = u.id
          JOIN articulos a ON m.articulos_id = a.id
+         JOIN usuarios u ON a.usuarios_id = u.id
          WHERE m.articulos_id IN (
              SELECT DISTINCT articulos_id FROM mensajes WHERE usuarios_id = ?
          )
-         ORDER BY m.created_at ASC`,
+         GROUP BY a.id`,
         [usuarios_id]
     );
     return rows;
