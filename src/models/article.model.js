@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { selectByMonth } = require('./transactions.model');
 
 const articleInfo = `
   SELECT
@@ -38,7 +39,36 @@ getUserArticles = async (userId) => {
     }
 };
 
+//Obtener articulos publicados por mes
+
+const selectByThisMonth = async ()=>{
+    // seleccionar articulos publicados mes actual 
+    const [result]= await pool.query (`
+        SELECT COUNT(*) AS total
+        FROM articulos
+        WHERE month(created_at) = MONTH(CURRENT_DATE())
+            AND year(created_at) = YEAR(CURRENT_DATE())
+        `)
+        return result[0];
+}
+
+// Articulos publicados el mes pasado
+const selectByLastMonth = async ()=>{
+    const now = new Date();
+    const primerDia = new Date(now.getFullYear(), now.getMonth()-1,1);
+    const ultimoDia= new Date (now.getFullYear(), now.getMonth(),0)
+
+    const [result]= await pool.query (`
+        SELECT COUNT(*) AS total
+        FROM articulos
+            WHERE created_at BETWEEN ? AND ?`,
+        [primerDia,ultimoDia])
+        return result[0];
+}
+
 module.exports = {
     getAll,
-    getUserArticles
+    getUserArticles,
+    selectByThisMonth,
+    selectByLastMonth
 };

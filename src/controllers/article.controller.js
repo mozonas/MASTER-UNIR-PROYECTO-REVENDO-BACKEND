@@ -1,4 +1,4 @@
-const { getAll, getUserArticles } = require('../models/article.model');
+const { getAll, getUserArticles, selectByThisMonth, selectByLastMonth } = require('../models/article.model');
 
 const getAllUserArticles = async (req, res) => {
     try {
@@ -17,6 +17,33 @@ const getAllUserArticles = async (req, res) => {
     }
 };
 
+// LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
+const getThisMonth = async (req, res) =>{
+    try {
+        const data = await selectByThisMonth()
+        res.json ({total: data.total})
+    } catch (error) {
+        console.error (error)
+        return res.status (500).json({
+            message: ' Error devolviendo articulos publicados al mes'
+        })
+    }
+}
+
+const getLastMonth = async (req,res) =>{
+    try {
+        const data = await selectByLastMonth();
+        res.json ({total: data.total})
+    } catch (error) {
+        console.error (error)
+        return res.status (500).json({
+            message:'Error devolviendo articulos publicados el mes pasado'
+        })
+        
+    }
+}
 module.exports = {
     getAllUserArticles,
+    getThisMonth,
+    getLastMonth
 };
