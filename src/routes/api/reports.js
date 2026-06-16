@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-// Ubicar el controlador de reportes
 const reportsController = require('../../controllers/reports.controller');
 
-// Ruta para obtener los contadores de badges en el panel de moderación
-router.get ('/badges-counters', reportsController.getBadgesCounters);
+router.get('/badges-counters', reportsController.getBadgesCounters);
+router.post('/report-article/:articleId', reportsController.reportArticle);
+router.get('/articles-in-review', reportsController.getArticlesInReview);
+router.put('/resolve/:reporteId', reportsController.resolveReport);
 
-// Exportar el router para usarlo en el archivo principal de rutas
 module.exports = router;
