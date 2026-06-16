@@ -15,7 +15,8 @@ router.use('/admin', require('./api/admin'));
 // router.use('/moderation', require('./api/moderation'));
 
 //router.use('/messages', require('./api/messages'));
-//router.use('/transactions', require('./api/transactions'))
+
+router.use ('/transactions', require ('./api/transactions'))
 
 
 module.exports = router;
