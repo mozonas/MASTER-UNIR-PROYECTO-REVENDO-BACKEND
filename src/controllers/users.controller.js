@@ -43,21 +43,30 @@ const create = async (req, res) => {
 const edit = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { nombre, apellidos, email, usuario, foto, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
+        const { nombre, apellidos, email, usuario, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
+
+        // Usuario actual del middleware (checkUserId)
+        const usuarioActual = req.usuarioEncontrado;
+
+        // Si viene un archivo de Multer, usamos su nombre. Si no, dejamos la foto que ya tenía antes.
+        let fotoFinal = usuarioActual.foto;
+        if (req.file) {
+            fotoFinal = req.file.filename;
+        }
 
         await db.query(
             `UPDATE usuarios 
              SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
              WHERE id = ?`,
             [
-                nombre || null, 
-                apellidos || null, 
-                email || null, 
-                usuario || null, 
-                foto || null, 
-                fecha_nacimiento || null, 
-                perfil || 'USUARIO', 
-                direccion || null, 
+                nombre || null,
+                apellidos || null,
+                email || null,
+                usuario || null,
+                fotoFinal,
+                fecha_nacimiento || null,
+                perfil || 'USUARIO',
+                direccion || null,
                 descripcion || null,
                 userId
             ]
@@ -76,7 +85,7 @@ const edit = async (req, res) => {
 const remove = async (req, res) => {
     try {
         const { userId } = req.params;
-        
+
         // Borrado directo en la base de datos
         await db.query('DELETE FROM usuarios WHERE id = ?', [userId]);
         res.json({ message: 'Usuario eliminado correctamente' });
@@ -102,6 +111,48 @@ const register = async (req, res) => {
     }
 }
 
+// Nueva función controladora para la ruta de estadísticas
+const getStatistics = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const stats = await UserModel.getStats(userId);
+
+        // Si el usuario no tiene ninguna interacción aún, devolvemos contadores a cero de forma segura
+        if (!stats) {
+            return res.json({
+                total_vendidos: 0,
+                total_valoraciones: 0,
+                rating_media: 0.0
+            });
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error('Error en getStatistics controller:', error);
+        res.status(500).json({ message: 'Error en el servidor al calcular estadísticas reales.' });
+    }
+}
+
+const getValoraciones = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const valoraciones = await UserModel.getValoraciones(userId);
+
+        // 1. Primero validamos si está vacío
+        if (!valoraciones || valoraciones.length === 0) {
+            // Devolvemos un array vacío para que el frontend (listaValoraciones.length === 0) funcione correctamente
+            return res.json([]); 
+        }
+
+        // 2. Si tiene datos, los enviamos una sola vez
+        return res.json(valoraciones);
+
+    } catch (error) {
+        console.error('Error en getValoraciones controller:', error);
+        return res.status(500).json({ message: 'Error en el servidor al obtener valoraciones.' });
+    }
+}
+
 module.exports = {
-    getAll, getById, create, edit, remove, register
+    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
 }

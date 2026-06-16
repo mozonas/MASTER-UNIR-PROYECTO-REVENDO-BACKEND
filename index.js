@@ -18,5 +18,11 @@ server.listen(PORT, () => {
 
 // Manejo básico de errores por si el puerto está ocupado
 server.on('error', (error) => {
-    console.error('❌ Error en el servidor de Node:', error.message);
+    if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Error en el servidor de Node: el puerto ${PORT} ya está en uso.`);
+        console.error('   Cierra el proceso que usa ese puerto o configura otra variable PORT.');
+    } else {
+        console.error('❌ Error en el servidor de Node:', error.message);
+    }
+    process.exit(1);
 });
