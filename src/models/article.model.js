@@ -39,6 +39,20 @@ getUserArticles = async (userId) => {
     }
 };
 
+// Obtener articulos vendidos al mes 
+const selectSoldThisMonth = async (month, year)=>{
+    const [result]= await pool.query (`
+       SELECT day(created_at) AS dia, COUNT(*) AS total
+       FROM articulos
+       WHERE estadoVenta = 'VENDIDO'
+       AND month(created_at) = ? AND year(created_at) =?
+       GROUP BY dia
+       ORDER BY dia ASC`,
+       [month, year]);
+       return result
+}
+
+
 //Obtener articulos publicados por mes
 
 const selectByThisMonth = async ()=>{
@@ -69,6 +83,7 @@ const selectByLastMonth = async ()=>{
 module.exports = {
     getAll,
     getUserArticles,
+    selectSoldThisMonth,
     selectByThisMonth,
     selectByLastMonth
 };

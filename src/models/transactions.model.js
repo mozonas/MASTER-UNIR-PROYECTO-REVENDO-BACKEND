@@ -14,6 +14,7 @@ const selectById = async (id)=> {
         return result [0];
 };
 
+// LOS DOS MÉTODOS DE SELECT POR FECHA AL FINAL NO SE USAN COMO VENTAS//
 //Obtener ventas diarias de un mes
 const selectByMonth = async (month, year) =>{
     const [result] = await db.query (`

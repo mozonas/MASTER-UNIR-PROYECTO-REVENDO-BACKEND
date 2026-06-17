@@ -23,11 +23,14 @@ console.log('Router de articulos creado.');
 //router.get('/', articleController.getAll); // GET /api/articles
 
 
+// Ruta para extraer articulos publicados este mes y el anterior
+router.get ('/published/this-month', articleController.getThisMonth);
+router.get ('/published/last-month', articleController.getLastMonth);
+
 // Ruta para extraer articulos vendidos este mes
-router.get ('/published/this-month', articleController.getThisMonth)
-router.get ('/published/last-month', articleController.getLastMonth)
-
-
+router.get ('/sold/:month', articleController.getSoldThisMonth);
+// Ruta para extraer articulos vendidos este año
+//router.get ('/sold/last-year', articleController);
 
 // 6. Exportar el router para ser utilizado en el servidor
 module.exports = router;

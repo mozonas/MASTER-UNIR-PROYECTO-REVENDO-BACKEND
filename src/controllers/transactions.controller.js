@@ -26,7 +26,7 @@ const getById = async (req, res) =>{
     }
 
 }
-
+// LOS DOS MÉTODOS DE SELECT POR FECHA AL FINAL NO SE USAN COMO VENTAS//
 const getByMonth = async (req,res) =>{
     try {
         const {month} = req.params;
@@ -43,7 +43,6 @@ const getByMonth = async (req,res) =>{
         res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
         }
 }
-
 
 const getByYear = async (req,res) =>{
     try {
@@ -64,7 +63,6 @@ const getByYear = async (req,res) =>{
     }
 
 }
-
 
 const create = async (req,res) =>{
     try {
