@@ -29,12 +29,17 @@ getAll = async () => {
   }
 };
 
-getUserArticles = async (userId) => {
+getUserArticles = async (userId, estado) => {
   try {
-    const [rows] = await pool.query(
-      "SELECT * FROM articulos WHERE usuarios_id = ?",
-      [userId],
-    );
+    let query = "SELECT * FROM articulos WHERE usuarios_id = ?";
+    const params = [userId];
+
+    if (estado && estado !== 'all') {
+      query += ' AND estadoVenta = ?';
+      params.push(estado);
+    }
+
+    const [rows] = await pool.query(query, params);
     return rows;
   } catch (error) {
     console.error("Error al obtener los artículos del usuario:", error);
@@ -80,9 +85,23 @@ updateArticle = async (articleId, updatedData) => {
 
 };
 
+createArticle = async (articleData) => {
+  try {
+    const payload = {
+      ...articleData,
+      estadoVenta: articleData.estadoVenta || 'DISPONIBLE'
+    };
+    const [result] = await pool.query('INSERT INTO articulos SET ?', [payload]);
+    return result.insertId;
+  } catch (error) {
+    console.error('Error al crear el artículo:', error);
+    throw error;
+  }
+};
+
 deleteArticle = async (articleId) => {
     try {
-        const [result] = await pool.query('DELETE FROM articulos WHERE id = ?', [articleId]);
+        const [result] = await pool.query('UPDATE articulos SET estadoVenta = ? WHERE id = ?', ['BORRADO', articleId]);
         return result.affectedRows > 0;
     } catch (error) {
         console.error('Error al eliminar el artículo:', error);
@@ -93,6 +112,7 @@ deleteArticle = async (articleId) => {
 module.exports = {
     getAll,
     getUserArticles,
+    createArticle,
     updateArticle,
     deleteArticle,
     getArticle

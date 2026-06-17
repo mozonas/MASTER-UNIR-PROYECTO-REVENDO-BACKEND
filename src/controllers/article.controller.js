@@ -1,10 +1,11 @@
-const { getAll, getArticleById,getUserArticles,updateArticle,deleteArticle } = require('../models/article.model');
+const { getUserArticles, createArticle, updateArticle, deleteArticle, getArticle } = require('../models/article.model');
 
 const getAllUserArticles = async (req, res) => {
     const userId = req.params.userId;
+    const { estado } = req.query;
 
     try {
-        const rawArticles = await getUserArticles(userId);
+        const rawArticles = await getUserArticles(userId, estado);
 
         return res.status(200).json({
             data: rawArticles
@@ -14,6 +15,30 @@ const getAllUserArticles = async (req, res) => {
         return res.status(500).json({
             status: 'error',
             message: 'Error al obtener los artículos del usuario'
+        });
+    }
+};
+
+const addArticle = async (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
+        const articleData = {
+            ...req.body,
+            usuarios_id: userId
+        };
+
+        const newId = await createArticle(articleData);
+
+        return res.status(201).json({
+            status: 'success',
+            message: 'Artículo creado correctamente',
+            data: { id: newId }
+        });
+    } catch (error) {
+        console.error('Error al crear el artículo:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Error al crear el artículo'
         });
     }
 };
@@ -79,6 +104,7 @@ const getById = async (req, res) => {
 
 module.exports = {
     getAllUserArticles,
+    addArticle,
     editArticle,
     eraseArticle,
     getById
