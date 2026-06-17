@@ -70,8 +70,8 @@ const edit = async (req, res) => {
 
         await db.query(
             `UPDATE usuarios 
-             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
-             WHERE id = ?`,
+     SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
+     WHERE id = ?`,
             [
                 nombre || null,
                 apellidos || null,
@@ -80,7 +80,7 @@ const edit = async (req, res) => {
                 fotoFinal,
                 fecha_nacimiento || null,
                 perfil || 'USUARIO',
-                direccion || null,
+                direccion || '',
                 descripcion || null,
                 userId
             ]
@@ -155,7 +155,7 @@ const getValoraciones = async (req, res) => {
         // 1. Primero validamos si está vacío
         if (!valoraciones || valoraciones.length === 0) {
             // Devolvemos un array vacío para que el frontend (listaValoraciones.length === 0) funcione correctamente
-            return res.json([]); 
+            return res.json([]);
         }
 
         // 2. Si tiene datos, los enviamos una sola vez
