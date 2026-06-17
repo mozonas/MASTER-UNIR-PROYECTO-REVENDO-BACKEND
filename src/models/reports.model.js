@@ -39,19 +39,32 @@ const Report = {
         try {
             await conn.beginTransaction();
 
+            // reportes no tiene usuarios_id; la relación va por usuarios_tiene_reportes
             const [reportResult] = await conn.query(
-                `INSERT INTO reportes (motivo, estado, usuarios_id) VALUES (?, 'pendiente', ?)`,
-                [motivo, usuarioId]
+                `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
+                [motivo]
             );
             const reporteId = reportResult.insertId;
+
+            // Vincular usuario al reporte solo si el usuario existe en BD
+            // (puede no existir si se usa un token de dev con userId ficticio)
+            const [userCheck] = await conn.query(`SELECT id FROM usuarios WHERE id = ?`, [usuarioId]);
+            if (userCheck.length > 0) {
+                await conn.query(
+                    `INSERT INTO usuarios_tiene_reportes (usuarios_id, reportes_id) VALUES (?, ?)`,
+                    [usuarioId, reporteId]
+                );
+            }
 
             await conn.query(
                 `INSERT INTO articulos_tiene_reportes (articulos_id, reportes_id) VALUES (?, ?)`,
                 [articuloId, reporteId]
             );
 
+            // estadoVenta ENUM solo tiene DISPONIBLE/VENDIDO/RESERVADO en el schema original;
+            // si la BD tiene EN_REVISION añadido manualmente esto funcionará, si no, quitar esta línea
             await conn.query(
-                `UPDATE articulos SET estadoVenta = 'EN_REVISION' WHERE id = ?`,
+                `UPDATE articulos SET estadoVenta = 'RESERVADO' WHERE id = ?`,
                 [articuloId]
             );
 
@@ -96,20 +109,16 @@ const Report = {
     },
 
     resolveReport: async (reporteId, accion) => {
+        const conn = await db.getConnection();
         try {
-            const nuevoEstadoReporte = accion === 'aprobar' ? 'resuelto' : 'descartado';
-            const nuevoEstadoArticulo = accion === 'aprobar' ? 'RETIRADO' : 'DISPONIBLE';
+            // ENUM reportes.estado: ('pendiente', 'activo', 'retirado')
+            // ENUM articulos.estadoVenta: ('DISPONIBLE', 'VENDIDO', 'RESERVADO')
+            const nuevoEstadoReporte = accion === 'aprobar' ? 'retirado' : 'activo';
+            const nuevoEstadoArticulo = accion === 'aprobar' ? 'VENDIDO' : 'DISPONIBLE';
 
-            const [result] = await db.query(
-                `UPDATE reportes r
-                 INNER JOIN articulos_tiene_reportes atr ON r.id = atr.reportes_id
-                 SET r.estado = ?,
-                     (SELECT estadoVenta FROM articulos WHERE id = atr.articulos_id LIMIT 1) = ?
-                 WHERE r.id = ?`,
-                [nuevoEstadoReporte, nuevoEstadoArticulo, reporteId]
-            );
+            await conn.beginTransaction();
 
-            await db.query(
+            await conn.query(
                 `UPDATE articulos a
                  INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
                  SET a.estadoVenta = ?
@@ -117,15 +126,18 @@ const Report = {
                 [nuevoEstadoArticulo, reporteId]
             );
 
-            await db.query(
+            await conn.query(
                 `UPDATE reportes SET estado = ? WHERE id = ?`,
                 [nuevoEstadoReporte, reporteId]
             );
 
-            return result;
+            await conn.commit();
         } catch (error) {
+            await conn.rollback();
             console.error('Error al resolver el reporte:', error);
             throw error;
+        } finally {
+            conn.release();
         }
     }
 };

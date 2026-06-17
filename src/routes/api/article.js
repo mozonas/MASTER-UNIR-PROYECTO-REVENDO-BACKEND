@@ -17,7 +17,7 @@ const router = express.Router();
 console.log('Router de articulos creado.');
 
 // 5. Definir las rutas para cada operacion (GET, POST, PUT, DELETE)
-router.get('/', articleController.getAll); // GET /api/articles
+router.get('/', articleController.getAllUserArticles); // GET /api/articles
 
 // 6. Exportar el router para ser utilizado en el servidor
 module.exports = router;

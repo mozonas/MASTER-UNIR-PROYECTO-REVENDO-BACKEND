@@ -13,9 +13,11 @@ const articleInfo = `
     a.created_at,
     a.usuarios_id,
     a.categorias_id,
+    c.nombre AS categoria_nombre,
     f.url AS foto,
     atr.reportes_id AS estado_reporte
   FROM articulos a
+  LEFT JOIN categorias c ON a.categorias_id = c.id
   LEFT JOIN fotos f ON a.id = f.articulos_id
   LEFT JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id`;
 

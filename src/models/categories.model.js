@@ -54,7 +54,13 @@ const remove = async (id) => {
     return result;
 };
 
+const getAll = async () => {
+    const [rows] = await db.query('SELECT id, nombre FROM categorias ORDER BY nombre ASC');
+    return rows;
+};
+
 module.exports = {
+    getAll,
     getAllPaginated,
     countAll,
     insert,
