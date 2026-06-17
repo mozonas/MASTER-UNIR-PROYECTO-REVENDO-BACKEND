@@ -42,26 +42,35 @@ getUserArticles = async (userId) => {
   }
 };
 
+/**
+ *
+ */
 getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
-a.*, u.nombre AS nombre_vendedor, 
-u.apellidos AS apellidos_vendedor, 
-u.email AS email_vendedor, 
-u.usuario AS usuario_vendedor, 
-u.direccion AS direccion_vendedor, 
-u.isBlocked AS isBlocked_vendedor, 
-u.perfil AS perfil_vendedor,
-c.nombre AS categoria
+a.*,
+c.nombre AS categoria,
+d.direccion AS calle_direccion_vendedor, 
+d.codigo_postal AS cp_direccion_vendedor, 
+d.ciudad AS ciudad_direccion_vendedor, 
+d.provincia AS provincia_direccion_vendedor, 
+d.pais AS pais_direccion_vendedor
 FROM articulos a 
+INNER JOIN categorias c
+    ON a.categorias_id = c.id 
 INNER JOIN usuarios u
     ON u.id = a.usuarios_id 
-INNER JOIN categorias c
-    ON a.categorias_id = c.id where a.id = ?`,
+INNER JOIN direcciones d
+    ON d.usuario_id = u.id 
+ where a.id = ?`,
       [id],
     );
     console.log("Artículo obtenido:", rows[0]);
+    if (rows[0] === undefined) {
+      console.error("Artículo no encontrado");
+      //throw new Error("Artículo no encontrado");
+    }
     return rows[0];
   } catch (error) {
     console.error("Error al obtener el artículo:", error);
@@ -69,32 +78,60 @@ INNER JOIN categorias c
   }
 };
 
-updateArticle = async (articleId, updatedData) => {
-    try {
-        const [result] = await pool.query('UPDATE articulos SET ? WHERE id = ?', [updatedData, articleId]);
-        return result.affectedRows > 0;
-    } catch (error) {
-        console.error('Error al actualizar el artículo:', error);
-        throw error;
+/**
+ *
+ */
+getArticleFotos = async (id) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT 
+f.url,
+f.nombreAlt
+FROM fotos f
+ where f.articulos_id = ?`,
+      [id],
+    );
+    console.log("Fotos del artículo obtenidas:", rows);
+    if (rows === undefined) {
+      console.error("Fotos del artículo no encontradas");
     }
+    return rows;
+  } catch (error) {
+    console.error("Error al obtener las fotos del artículo:", error);
+    throw error;
+  }
+};
 
+updateArticle = async (articleId, updatedData) => {
+  try {
+    const [result] = await pool.query("UPDATE articulos SET ? WHERE id = ?", [
+      updatedData,
+      articleId,
+    ]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error("Error al actualizar el artículo:", error);
+    throw error;
+  }
 };
 
 deleteArticle = async (articleId) => {
-    try {
-        const [result] = await pool.query('DELETE FROM articulos WHERE id = ?', [articleId]);
-        return result.affectedRows > 0;
-    } catch (error) {
-        console.error('Error al eliminar el artículo:', error);
-        throw error;
-    }
+  try {
+    const [result] = await pool.query("DELETE FROM articulos WHERE id = ?", [
+      articleId,
+    ]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error("Error al eliminar el artículo:", error);
+    throw error;
+  }
 };
 
 module.exports = {
-    getAll,
-    getUserArticles,
-    updateArticle,
-    deleteArticle,
-    getArticle
-
+  getAll,
+  getUserArticles,
+  updateArticle,
+  deleteArticle,
+  getArticle,
+  getArticleFotos,
 };
