@@ -37,6 +37,22 @@ const getSoldThisMonth = async (req, res)=>{
         }
     }
 
+// Llamada al modelo soldByyear
+const getSoldByYear = async (req, res)=>{
+    try {
+        const {year}= req.params
+        if(!year){
+            return res.status (400).json ({
+            message: 'parámetro year no recibido'
+        })
+     }
+     const ventasAnuales = await ArticleModel.selectSoldByYear(year);
+     res.json (ventasAnuales)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error obteniendo fechas por año' });
+    }
+}
 
 
 // LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
@@ -68,5 +84,6 @@ module.exports = {
     getAllUserArticles,
     getThisMonth,
     getLastMonth,
-    getSoldThisMonth
+    getSoldThisMonth,
+    getSoldByYear
 };

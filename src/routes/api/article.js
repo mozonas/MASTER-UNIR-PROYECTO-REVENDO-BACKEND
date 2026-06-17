@@ -30,7 +30,7 @@ router.get ('/published/last-month', articleController.getLastMonth);
 // Ruta para extraer articulos vendidos este mes
 router.get ('/sold/:month', articleController.getSoldThisMonth);
 // Ruta para extraer articulos vendidos este año
-//router.get ('/sold/last-year', articleController);
+router.get ('/sold/year/:year', articleController.getSoldByYear);
 
 // 6. Exportar el router para ser utilizado en el servidor
 module.exports = router;

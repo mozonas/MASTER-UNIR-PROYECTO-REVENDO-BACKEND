@@ -62,4 +62,24 @@ const getValoraciones = async (id) => {
     return rows;
 }
 
-module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones };
+const selectUsersCurrentMonth = async () => {
+  const [result] = await db.query(`
+    SELECT COUNT(*) AS total
+    FROM usuarios
+    WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(created_at) = YEAR(CURRENT_DATE())
+  `);
+  return result[0];
+};
+
+const selectUsersLastMonth = async () => {
+  const [result] = await db.query(`
+    SELECT COUNT(*) AS total
+    FROM usuarios
+    WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+      AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
+  `);
+  return result[0];
+};
+
+module.exports = { getAll, getById, insert, selectByEmail, selectUsersCurrentMonth, selectUsersLastMonth, getStats, getValoraciones };

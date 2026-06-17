@@ -24,6 +24,20 @@ const getById = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor al obtener el usuario' });
     }
 };
+const getUsersStats = async (req, res) => {
+  try {
+    const current = await UserModel.selectUsersCurrentMonth();
+    const last = await UserModel.selectUsersLastMonth();
+    res.json({
+      usuariosMesActual: current.total,
+      usuariosMesAnterior: last.total,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+  }
+};
 
 const create = async (req, res) => {
     try {
@@ -154,5 +168,5 @@ const getValoraciones = async (req, res) => {
 }
 
 module.exports = {
-    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
+    getAll, getById, getUsersStats, create, edit, remove, register, getStatistics, getValoraciones
 }

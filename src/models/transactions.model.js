@@ -14,29 +14,27 @@ const selectById = async (id)=> {
         return result [0];
 };
 
-// LOS DOS MÉTODOS DE SELECT POR FECHA AL FINAL NO SE USAN COMO VENTAS//
-//Obtener ventas diarias de un mes
-const selectByMonth = async (month, year) =>{
+
+//**Obtener actividad por usuario de un mes*/
+const selectByMonth = async () =>{
     const [result] = await db.query (`
-        SELECT day (fecha) AS dia, COUNT(*) AS total
+        SELECT COUNT(DISTINCT usuarios_id) AS total
         FROM transacciones
-        WHERE MONTH (fecha) =? AND YEAR (fecha)=?
-        GROUP BY dia
-        ORDER BY dia ASC`, 
-        [month,year]);
-        return result;
+        WHERE MONTH(fecha) = MONTH(CURRENT_DATE())
+        AND YEAR(fecha) = YEAR(CURRENT_DATE())`
+    );
+        return result[0];
 }
 
-//** Obtener transacciones mensuales por año */
-const selectByYear = async (year)=>{
+//** Obtener actividad por usuario mes anterior */
+const selectByLastMonth = async ()=>{
     const [result] = await db.query(`
-    SELECT MONTH (fecha) AS mes, COUNT(*) AS total
+    SELECT COUNT(DISTINCT usuarios_id) AS total
     FROM transacciones
-    WHERE YEAR (fecha)=?
-    GROUP BY mes
-    ORDER BY mes ASC`, 
-    [year]);
-    return result;
+    WHERE MONTH(fecha) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+    AND YEAR(fecha) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)`
+    );
+    return result[0];
 }
 
 
@@ -75,7 +73,7 @@ module.exports ={
     selectAll,
     selectById,
     selectByMonth,
-    selectByYear,
+    selectByLastMonth,
     insert,
     updateById,
     deleteById
