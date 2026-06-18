@@ -100,9 +100,49 @@ const getById = async (req, res) => {
   }
 };
 
+//mog 18062026 -> buscador de artículos//cargador de artículos desde la home
+//mog 18062026 -> buscador de artículos / cargador de artículos desde la home
+const ArticleModel = require("../models/article.model");
+
+const searchArticles = async (req, res) => {
+  console.log("🟢 Entrando en searchArticles con filtros:", req.query);
+  debugger; // Agrega un punto de interrupción aquí para depuración
+  try {
+    const filters = {
+      texto: req.query.texto || "",
+      categoria: req.query.categoria || null,
+      estado: req.query.estado || null,
+      min: req.query.min || 0,
+      max: req.query.max || 999999,
+      ubicacion: req.query.ubicacion || "",
+      orden: req.query.orden || "recientes",
+      page: parseInt(req.query.page) || 1,
+    };
+    console.log("🟢 Llamando a ArticleModel.searchArticles");
+
+    const result = await ArticleModel.searchArticles(filters);
+
+    return res.status(200).json({
+      status: "success",
+      data: result,
+    });
+
+  } catch (error) {
+    console.error("Error en searchArticles:", error);
+    console.error("🔴 ERROR en searchArticles:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Error interno en el servidor",
+    });
+  }
+};
+
+
 module.exports = {
   getAllUserArticles,
   editArticle,
   eraseArticle,
+  searchArticles,
   getById,
 };

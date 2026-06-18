@@ -19,7 +19,7 @@ const articleInfo = `
   LEFT JOIN fotos f ON a.id = f.articulos_id
   LEFT JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id`;
 
-getAll = async () => {
+const getAll = async () => {
   try {
     const [rows] = await pool.query(articleInfo);
     return rows;
@@ -29,7 +29,7 @@ getAll = async () => {
   }
 };
 
-getUserArticles = async (userId) => {
+const getUserArticles = async (userId) => {
   try {
     const [rows] = await pool.query(
       "SELECT * FROM articulos WHERE usuarios_id = ?",
@@ -45,7 +45,7 @@ getUserArticles = async (userId) => {
 /**
  *
  */
-getArticle = async (id) => {
+const getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
@@ -81,7 +81,7 @@ INNER JOIN direcciones d
 /**
  *
  */
-getArticleFotos = async (id) => {
+const getArticleFotos = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
@@ -102,7 +102,7 @@ FROM fotos f
   }
 };
 
-updateArticle = async (articleId, updatedData) => {
+const updateArticle = async (articleId, updatedData) => {
   try {
     const [result] = await pool.query("UPDATE articulos SET ? WHERE id = ?", [
       updatedData,
@@ -115,7 +115,7 @@ updateArticle = async (articleId, updatedData) => {
   }
 };
 
-deleteArticle = async (articleId) => {
+const deleteArticle = async (articleId) => {
   try {
     const [result] = await pool.query("DELETE FROM articulos WHERE id = ?", [
       articleId,
@@ -127,6 +127,99 @@ deleteArticle = async (articleId) => {
   }
 };
 
+// mog 18062026 -> buscador de artículos / cargador de artículos desde la home
+const searchArticles = async (filters) => {
+  const {
+    texto,
+    categoria,
+    estado,
+    min,
+    max,
+    orden,
+    page
+  } = filters;
+
+  const limit = 12;
+  const offset = (page - 1) * limit;
+
+  let where = `WHERE a.estadoVenta = 'DISPONIBLE'`;
+  let params = [];
+
+  // Texto en título o descripción
+  if (texto) {
+    where += ` AND (a.titulo LIKE ? OR a.descripcion LIKE ?)`;
+    params.push(`%${texto}%`, `%${texto}%`);
+  }
+
+  // Categoría
+  if (categoria) {
+    where += ` AND a.categorias_id = ?`;
+    params.push(categoria);
+  }
+
+  // Estado del producto
+  if (estado) {
+    where += ` AND a.estadoProducto = ?`;
+    params.push(estado);
+  }
+
+  // Rango de precio
+  where += ` AND a.precio BETWEEN ? AND ?`;
+  params.push(min, max);
+
+  // Ordenación
+  let orderBy = `ORDER BY a.id DESC`;
+  if (orden === "precio_asc") orderBy = `ORDER BY a.precio ASC`;
+  if (orden === "precio_desc") orderBy = `ORDER BY a.precio DESC`;
+
+  // SELECT principal
+  const sql = `
+    SELECT 
+      a.id,
+      a.titulo,
+      a.descripcion,
+      a.precio,
+      a.estadoVenta,
+      a.estadoProducto,
+      a.tipoEntrega,
+      a.tipoPago,
+      a.created_at,
+      a.usuarios_id,
+      a.categorias_id,
+      c.nombre AS categoria,
+      (
+        SELECT f.url 
+        FROM fotos f 
+        WHERE f.articulos_id = a.id 
+        ORDER BY f.id ASC 
+        LIMIT 1
+      ) AS foto
+    FROM articulos a
+    INNER JOIN categorias c ON c.id = a.categorias_id
+    ${where}
+    ${orderBy}
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  // SELECT para contar total
+  const sqlCount = `
+    SELECT COUNT(*) AS total
+    FROM articulos a
+    ${where}
+  `;
+
+  const [items] = await pool.query(sql, params);
+  const [count] = await pool.query(sqlCount, params);
+
+  return {
+    items,
+    totalItems: count[0].total,
+    totalPages: Math.ceil(count[0].total / limit),
+    currentPage: page
+  };
+};
+
+
 module.exports = {
   getAll,
   getUserArticles,
@@ -134,4 +227,5 @@ module.exports = {
   deleteArticle,
   getArticle,
   getArticleFotos,
+  searchArticles,
 };
