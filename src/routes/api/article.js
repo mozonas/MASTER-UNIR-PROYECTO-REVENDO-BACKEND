@@ -9,7 +9,7 @@
 const express = require("express");
 
 const {
-  getAllUserArticles,
+  getAllArticles,
   getById,
   searchArticles
 } = require("../../controllers/article.controller");
@@ -21,7 +21,7 @@ console.log("Router de articulos creado.");
 router.get("/search", searchArticles);
 
 // 👉 LUEGO LAS RUTAS NORMALES
-router.get("/", getAllUserArticles);
+router.get("/", getAllArticles);
 
 // 👉 SIEMPRE AL FINAL
 router.get("/:id", getById);

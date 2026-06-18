@@ -14,12 +14,21 @@ const articleInfo = `
     a.usuarios_id,
     a.categorias_id,
     c.nombre AS categoria_nombre,
-    f.url AS foto,
-    atr.reportes_id AS estado_reporte
+    (
+      SELECT f.url
+      FROM fotos f
+      WHERE f.articulos_id = a.id
+      ORDER BY f.id ASC
+      LIMIT 1
+    ) AS foto,
+    (
+      SELECT atr.reportes_id
+      FROM articulos_tiene_reportes atr
+      WHERE atr.articulos_id = a.id
+      LIMIT 1
+    ) AS estado_reporte
   FROM articulos a
-  LEFT JOIN categorias c ON a.categorias_id = c.id
-  LEFT JOIN fotos f ON a.id = f.articulos_id
-  LEFT JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id`;
+  LEFT JOIN categorias c ON a.categorias_id = c.id`;
 
 const getAll = async () => {
   try {
