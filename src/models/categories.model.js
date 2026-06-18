@@ -54,10 +54,21 @@ const remove = async (id) => {
     return result;
 };
 
+// =====================================
+//   OBTENER TODAS LAS CATEGORÍAS (SIN PAGINAR)
+// =====================================
+const getAllCategories = async () => {
+    const [rows] = await db.query(
+        'SELECT id, nombre FROM categorias ORDER BY nombre ASC'
+    );
+    return rows;
+};
+
 module.exports = {
     getAllPaginated,
     countAll,
     insert,
     update,
-    remove
+    remove,
+    getAllCategories
 };

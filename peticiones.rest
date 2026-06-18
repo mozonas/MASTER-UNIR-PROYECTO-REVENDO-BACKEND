@@ -65,3 +65,7 @@ GET http://localhost:3000/api/article/search?texto=samsung
 
 ### Buscar por texto: sofa
 GET http://localhost:3000/api/article/search?texto=sofa
+
+### Obtener todas las categorías
+GET http://localhost:3000/api/categories
+

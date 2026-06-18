@@ -1,8 +1,23 @@
-/* 
-1. Importar el modelo de categoria
-2. Funcion para listar todas las categorias (getAll)
-3. Funcion para guardar una nueva categoria en la base de datos (create)
-4. Funcion para modificar el nombre de una categoria (update)
-5. Funcion para borrar una categoria del sistema (delete)
-6. Exportar todas las funciones del controlador
-*/
+const { getAllCategories } = require("../models/categories.model");
+
+const getAll = async (req, res) => {
+  try {
+    const categorias = await getAllCategories();
+
+    return res.status(200).json({
+      status: "success",
+      data: categorias
+    });
+
+  } catch (error) {
+    console.error("Error al obtener categorías:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener categorías"
+    });
+  }
+};
+
+module.exports = {
+  getAll,
+};

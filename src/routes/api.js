@@ -19,6 +19,8 @@ router.use('/article', require('./api/article'));
 //router.use('/messages', require('./api/messages'));
 
 router.use ('/transactions', require ('./api/transactions'))
+router.use('/categories', require('./api/category'));
+
 
 
 module.exports = router;
