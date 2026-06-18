@@ -1,5 +1,4 @@
 const pool = require("../config/db");
-const pool = require('../config/db');
 const { selectByMonth } = require('./transactions.model');
 
 const articleInfo = `
@@ -185,6 +184,110 @@ const selectByLastMonth = async ()=>{
         return result[0];
 }
 
+//**Obtener actividad diaria de articulos */
+const selectDaily = async ()=>{
+  const [result] = await pool.query(`
+    SELECT 
+    a.titulo,
+    a.descripcion,
+    a.created_at AS fecha,
+    u.nombre,
+    u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE DATE(a.created_at) = CURDATE()
+    ORDER BY a.created_at DESC
+    `);
+    return result
+}
+//Vendido diario
+const selectDailySold = async () => {
+  const [result]= await pool.query(`
+    SELECT 
+      a.titulo,
+      a.descripcion,
+      a.created_at AS fecha,
+      a.estadoVenta,
+      u.nombre,
+      u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE DATE(a.created_at) = CURDATE()
+      AND a.estadoVenta = 'VENDIDO'
+    ORDER BY a.created_at DESC
+  `);
+  return result
+
+}
+const selectWeekly = async ()=>{
+  const [result] = await pool.query(`
+    SELECT 
+    a.titulo,
+    a.descripcion,
+    a.created_at AS fecha,
+    u.nombre,
+    u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE a.created_at >= CURDATE() -INTERVAL 7 DAY
+    ORDER BY a.created_at DESC
+    `);
+    return result
+}
+//VENDIDO esta semana
+const selectWeeklySold = async () => {
+  const [result]= await pool.query(`
+  SELECT 
+    a.titulo,
+    a.descripcion,
+    a.created_at AS fecha,
+    a.estadoVenta,
+    u.nombre,
+    u.apellidos
+  FROM articulos a
+  INNER JOIN usuarios u ON u.id = a.usuarios_id
+  WHERE a.created_at >= CURDATE() -INTERVAL 7 DAY
+    AND a.estadoVenta = 'VENDIDO'
+  ORDER BY a.created_at DESC
+`);
+return result
+}
+const selectMonthly = async () =>{ 
+  const [result] = await pool.query(`
+  SELECT 
+    a.titulo,
+    a.descripcion,
+    a.created_at AS fecha,
+    u.nombre,
+    u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE MONTH(a.created_at) = MONTH(CURRENT_DATE())
+    ORDER BY a.created_at DESC
+    `);
+    return result
+}
+//VENDIDO este mes
+const selectMonthlySold = async ()=>{
+  const [result]= await pool.query(`
+    SELECT 
+    a.titulo,
+    a.descripcion,
+    a.created_at AS fecha,
+    u.nombre,
+    u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE MONTH(a.created_at) = MONTH(CURRENT_DATE())
+      AND a.estadoVenta = 'VENDIDO'
+    ORDER BY a.created_at DESC
+    `);
+    return result
+}
+
+
+
+
 module.exports = {
   getAll,
   getUserArticles,
@@ -192,10 +295,15 @@ module.exports = {
   deleteArticle,
   getArticle,
   getArticleFotos,
-    getAll,
-    getUserArticles,
-    selectSoldThisMonth,
-    selectSoldByYear,
-    selectByThisMonth,
-    selectByLastMonth
+  selectSoldThisMonth,
+  selectSoldByYear,
+  selectByThisMonth,
+  selectByLastMonth,
+  selectMonthly,
+  selectMonthlySold,
+  selectSoldThisMonth,
+  selectWeekly,
+  selectWeeklySold,
+  selectDaily,
+  selectDailySold
 };
