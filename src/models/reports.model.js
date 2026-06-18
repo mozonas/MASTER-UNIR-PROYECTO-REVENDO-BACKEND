@@ -38,4 +38,55 @@ const Report = {
     }
 }
 
-    module.exports = Report;
+const getDailyReports = async () =>{
+    const [result]= await db.query(`
+        SELECT 
+          r.fecha AS date,
+          r.motivo,
+          a.titulo AS articulo_reportado,
+          u.usuario
+        FROM reportes r
+        INNER JOIN articulos_tiene_reportes ar ON ar.reportes_id = r.id
+        INNER JOIN articulos a ON a.id = ar.articulos_id
+        INNER JOIN usuarios u ON u.id = a.usuarios_id
+        WHERE DATE(r.fecha) = CURDATE()
+        ORDER BY r.fecha DESC
+        `);
+        return result
+}
+const getWeeklyReports = async () =>{
+    const [result]= await db.query(`
+        SELECT 
+          r.fecha AS date,
+          r.motivo,
+          a.titulo AS articulo_reportado,
+          u.usuario
+        FROM reportes r
+        INNER JOIN articulos_tiene_reportes ar ON ar.reportes_id = r.id
+        INNER JOIN articulos a ON a.id = ar.articulos_id
+        INNER JOIN usuarios u ON u.id = a.usuarios_id
+        WHERE r.fecha >= CURDATE() - INTERVAL 7 DAY
+        ORDER BY r.fecha DESC
+    `);
+    return result
+}
+const getMonthlyReports = async  () =>{
+    const [result]= await db.query(`
+        SELECT 
+          r.fecha AS date,
+          r.motivo,
+          a.titulo AS articulo_reportado,
+          u.usuario
+        FROM reportes r
+        INNER JOIN articulos_tiene_reportes ar ON ar.reportes_id = r.id
+        INNER JOIN articulos a ON a.id = ar.articulos_id
+        INNER JOIN usuarios u ON u.id = a.usuarios_id
+        WHERE MONTH(r.fecha) = MONTH(CURRENT_DATE())
+        ORDER BY r.fecha DESC
+    `);
+    return result
+}
+
+
+module.exports = { ...Report, getDailyReports, getMonthlyReports, getWeeklyReports};
+     

@@ -24,6 +24,8 @@ const getById = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor al obtener el usuario' });
     }
 };
+
+// Obtener usuarios nuevos mensuales y mes anterior
 const getUsersStats = async (req, res) => {
   try {
     const current = await UserModel.selectUsersCurrentMonth();
