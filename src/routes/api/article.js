@@ -6,22 +6,24 @@
 6. Exportar el router para ser utilizado en el servidor
 */
 
-// 1. Importar el modulo Router de express
 const express = require("express");
 
-// 2. Importar las funciones del controlador de articulos
 const {
   getAllUserArticles,
   getById,
+  searchArticles
 } = require("../../controllers/article.controller");
 
-// 4. Crear una instancia del Router
 const router = express.Router();
 console.log("Router de articulos creado.");
 
-// 5. Definir las rutas para cada operacion (GET, POST, PUT, DELETE)
-router.get("/", getAllUserArticles); // GET /api/articles
-router.get("/:id", getById); // GET /api/articles/:id
+// 👉 SIEMPRE PRIMERO
+router.get("/search", searchArticles);
 
-// 6. Exportar el router para ser utilizado en el servidor
+// 👉 LUEGO LAS RUTAS NORMALES
+router.get("/", getAllUserArticles);
+
+// 👉 SIEMPRE AL FINAL
+router.get("/:id", getById);
+
 module.exports = router;
