@@ -88,13 +88,60 @@ updateArticle = async (articleId, updatedData) => {
 createArticle = async (articleData) => {
   try {
     const payload = {
-      ...articleData,
-      estadoVenta: articleData.estadoVenta || 'DISPONIBLE'
+      titulo: articleData.titulo,
+      descripcion: articleData.descripcion,
+      precio: articleData.precio,
+      estadoVenta: articleData.estadoVenta || 'DISPONIBLE',
+      estadoProducto: articleData.estadoProducto || null,
+      tipoEntrega: articleData.tipoEntrega,
+      tipoPago: articleData.tipoPago,
+      usuarios_id: articleData.usuarios_id,
+      categorias_id: articleData.categorias_id
     };
     const [result] = await pool.query('INSERT INTO articulos SET ?', [payload]);
     return result.insertId;
   } catch (error) {
     console.error('Error al crear el artículo:', error);
+    throw error;
+  }
+};
+
+getArticleEnums = async () => {
+  try {
+    const enumFields = ['estadoProducto', 'tipoEntrega', 'tipoPago'];
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME, COLUMN_TYPE
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_NAME = 'articulos'
+         AND COLUMN_NAME IN ('estadoProducto', 'tipoEntrega', 'tipoPago')
+         AND TABLE_SCHEMA = DATABASE()`
+    );
+
+    const enums = {
+      estadoProducto: [],
+      tipoEntrega: [],
+      tipoPago: []
+    };
+
+    for (const row of rows) {
+      // COLUMN_TYPE looks like: enum('Nuevo','Como nuevo','Buen estado')
+      const match = row.COLUMN_TYPE.match(/^enum\((.+)\)$/i);
+      if (match && enumFields.includes(row.COLUMN_NAME)) {
+        const values = [];
+        const regex = /'((?:\\'|[^'])*)'/g;
+        let result;
+
+        while ((result = regex.exec(match[1])) !== null) {
+          values.push(result[1].replace(/\\'/g, "'"));
+        }
+
+        enums[row.COLUMN_NAME] = values;
+      }
+    }
+
+    return enums;
+  } catch (error) {
+    console.error('Error al obtener ENUMs del artículo:', error);
     throw error;
   }
 };
@@ -115,6 +162,7 @@ module.exports = {
     createArticle,
     updateArticle,
     deleteArticle,
-    getArticle
+  getArticle,
+  getArticleEnums
 
 };
