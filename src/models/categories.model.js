@@ -54,10 +54,19 @@ const remove = async (id) => {
     return result;
 };
 
+const getByName = async (nombre) => {
+    const [rows] = await db.query(
+        'SELECT id, nombre FROM categorias WHERE LOWER(nombre) = LOWER(?) LIMIT 1',
+        [nombre]
+    );
+    return rows[0] || null;
+};
+
 module.exports = {
     getAllPaginated,
     countAll,
     insert,
     update,
-    remove
+    remove,
+    getByName
 };

@@ -13,6 +13,7 @@ const express = require("express");
 const {
   getAllUserArticles,
   getById,
+  getEnums,
 } = require("../../controllers/article.controller");
 
 // 4. Crear una instancia del Router
@@ -20,8 +21,9 @@ const router = express.Router();
 console.log("Router de articulos creado.");
 
 // 5. Definir las rutas para cada operacion (GET, POST, PUT, DELETE)
-router.get("/", getAllUserArticles); // GET /api/articles
-router.get("/:id", getById); // GET /api/articles/:id
+router.get("/enums", getEnums);       // GET /api/article/enums
+router.get("/", getAllUserArticles);  // GET /api/article
+router.get("/:id", getById);          // GET /api/article/:id
 
 // 6. Exportar el router para ser utilizado en el servidor
 module.exports = router;
