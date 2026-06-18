@@ -39,15 +39,12 @@ const Report = {
         try {
             await conn.beginTransaction();
 
-            // reportes no tiene usuarios_id; la relación va por usuarios_tiene_reportes
             const [reportResult] = await conn.query(
                 `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
                 [motivo]
             );
             const reporteId = reportResult.insertId;
 
-            // Vincular usuario al reporte solo si el usuario existe en BD
-            // (puede no existir si se usa un token de dev con userId ficticio)
             const [userCheck] = await conn.query(`SELECT id FROM usuarios WHERE id = ?`, [usuarioId]);
             if (userCheck.length > 0) {
                 await conn.query(
@@ -61,10 +58,8 @@ const Report = {
                 [articuloId, reporteId]
             );
 
-            // estadoVenta ENUM solo tiene DISPONIBLE/VENDIDO/RESERVADO en el schema original;
-            // si la BD tiene EN_REVISION añadido manualmente esto funcionará, si no, quitar esta línea
             await conn.query(
-                `UPDATE articulos SET estadoVenta = 'RESERVADO' WHERE id = ?`,
+                `UPDATE articulos SET estadoVenta = 'EN_REVISION' WHERE id = ?`,
                 [articuloId]
             );
 
@@ -111,10 +106,8 @@ const Report = {
     resolveReport: async (reporteId, accion) => {
         const conn = await db.getConnection();
         try {
-            // ENUM reportes.estado: ('pendiente', 'activo', 'retirado')
-            // ENUM articulos.estadoVenta: ('DISPONIBLE', 'VENDIDO', 'RESERVADO')
             const nuevoEstadoReporte = accion === 'aprobar' ? 'retirado' : 'activo';
-            const nuevoEstadoArticulo = accion === 'aprobar' ? 'VENDIDO' : 'DISPONIBLE';
+            const nuevoEstadoArticulo = accion === 'aprobar' ? 'RETIRADO' : 'DISPONIBLE';
 
             await conn.beginTransaction();
 
