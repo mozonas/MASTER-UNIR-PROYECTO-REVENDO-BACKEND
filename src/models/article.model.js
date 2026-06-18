@@ -170,12 +170,17 @@ getArticleEnums = async () => {
 
 deleteArticle = async (articleId) => {
     try {
-        const [result] = await pool.query('UPDATE articulos SET estadoVenta = ? WHERE id = ?', ['BORRADO', articleId]);
+        const [result] = await pool.query(
+          'UPDATE articulos SET estadoVenta = ? WHERE id = ?',
+          ['BORRADO', articleId]
+        );
         return result.affectedRows > 0;
     } catch (error) {
         console.error('Error al eliminar el artículo:', error);
         throw error;
     }
+};
+
 const updateArticle = async (articleId, updatedData) => {
   try {
     const [result] = await pool.query("UPDATE articulos SET ? WHERE id = ?", [
