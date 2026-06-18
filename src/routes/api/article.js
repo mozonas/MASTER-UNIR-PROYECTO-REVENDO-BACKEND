@@ -25,3 +25,4 @@ router.get("/:id", getById);          // GET /api/article/:id
 router.get("/search", searchArticles);
 
 module.exports = router;
+
