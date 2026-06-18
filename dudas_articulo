@@ -1,0 +1,11 @@
+# Base de datos
+Confirmar datos de Host, Port, User y Password para la configuracion de conexion (db)
+
+# Articulo
+Confirmar el nombre de la tabla de la base de datos remota (modelo)
+Confirmar si el GET de articulos se puede realizar sin registro (routes)
+Confirmar el nombre del campo de ubicación lleva tilde (schema)
+Confirmar si los textos de estadoVenta van en mayúsculas y estadoProducto tal cual el borrador (schema)
+Confirmar si el campo de descripción tendrá un límite máximo de caracteres en la aplicación (schema)
+Confirmar si el GET de artículos debe devolver solo los IDs o incluir un JOIN con nombres de usuario y categoría (modelo)
+
