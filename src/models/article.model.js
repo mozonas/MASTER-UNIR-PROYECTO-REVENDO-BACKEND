@@ -128,6 +128,38 @@ deleteArticle = async (articleId) => {
   }
 };
 
+//**ARTICULOS VENDIDOS PARA ACTIVIDAD */
+const selectSold = async (rango) => {
+  const [result] = await pool.query(`
+    SELECT 
+      a.titulo,
+      a.descripcion,
+      a.created_at AS fecha,
+      a.estadoVenta,
+      u.nombre,
+      u.apellidos
+    FROM articulos a
+    INNER JOIN usuarios u ON u.id = a.usuarios_id
+    WHERE ${rango}
+      AND a.estadoVenta = 'VENDIDO'
+    ORDER BY a.created_at DESC
+  `);
+  return result;
+};
+
+// 1. Vendidos HOY
+const selectDailySold = () => 
+  selectSold(`DATE(a.created_at) = CURDATE()`);
+
+// 2. Vendidos últimos 7 DÍAS
+const selectWeeklySold = () => 
+  selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
+
+// 3. Vendidos MES ACTUAL
+const selectMonthlySold = () => 
+  selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
+
+//**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
 // Obtener articulos vendidos al mes 
 const selectSoldThisMonth = async (month, year)=>{
     const [result]= await pool.query (`
@@ -140,8 +172,6 @@ const selectSoldThisMonth = async (month, year)=>{
        [month, year]);
        return result
 }
-
-
 // Obtener articulos vendidos mensuales por año
 const selectSoldByYear = async (year) =>{
     const [result]= await pool.query(`
@@ -154,11 +184,8 @@ const selectSoldByYear = async (year) =>{
        [year]);
        return result;
 }
-
-
-
+//**PUBLICADOS COMPARATIVA PARA METRIC */
 //Obtener articulos publicados por mes
-
 const selectByThisMonth = async ()=>{
     // seleccionar articulos publicados mes actual 
     const [result]= await pool.query (`
@@ -169,7 +196,6 @@ const selectByThisMonth = async ()=>{
         `)
         return result[0];
 }
-
 // Articulos publicados el mes pasado
 const selectByLastMonth = async ()=>{
     const now = new Date();
@@ -183,7 +209,7 @@ const selectByLastMonth = async ()=>{
         [primerDia,ultimoDia])
         return result[0];
 }
-
+//**ARTICULOS CREADOS */
 //**Obtener actividad diaria de articulos */
 const selectDaily = async ()=>{
   const [result] = await pool.query(`
@@ -200,25 +226,6 @@ const selectDaily = async ()=>{
     `);
     return result
 }
-//Vendido diario
-const selectDailySold = async () => {
-  const [result]= await pool.query(`
-    SELECT 
-      a.titulo,
-      a.descripcion,
-      a.created_at AS fecha,
-      a.estadoVenta,
-      u.nombre,
-      u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE DATE(a.created_at) = CURDATE()
-      AND a.estadoVenta = 'VENDIDO'
-    ORDER BY a.created_at DESC
-  `);
-  return result
-
-}
 const selectWeekly = async ()=>{
   const [result] = await pool.query(`
     SELECT 
@@ -233,24 +240,6 @@ const selectWeekly = async ()=>{
     ORDER BY a.created_at DESC
     `);
     return result
-}
-//VENDIDO esta semana
-const selectWeeklySold = async () => {
-  const [result]= await pool.query(`
-  SELECT 
-    a.titulo,
-    a.descripcion,
-    a.created_at AS fecha,
-    a.estadoVenta,
-    u.nombre,
-    u.apellidos
-  FROM articulos a
-  INNER JOIN usuarios u ON u.id = a.usuarios_id
-  WHERE a.created_at >= CURDATE() -INTERVAL 7 DAY
-    AND a.estadoVenta = 'VENDIDO'
-  ORDER BY a.created_at DESC
-`);
-return result
 }
 const selectMonthly = async () =>{ 
   const [result] = await pool.query(`
@@ -267,25 +256,6 @@ const selectMonthly = async () =>{
     `);
     return result
 }
-//VENDIDO este mes
-const selectMonthlySold = async ()=>{
-  const [result]= await pool.query(`
-    SELECT 
-    a.titulo,
-    a.descripcion,
-    a.created_at AS fecha,
-    u.nombre,
-    u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE MONTH(a.created_at) = MONTH(CURRENT_DATE())
-      AND a.estadoVenta = 'VENDIDO'
-    ORDER BY a.created_at DESC
-    `);
-    return result
-}
-
-
 
 
 module.exports = {
@@ -295,13 +265,13 @@ module.exports = {
   deleteArticle,
   getArticle,
   getArticleFotos,
+  selectSold,
   selectSoldThisMonth,
   selectSoldByYear,
   selectByThisMonth,
   selectByLastMonth,
   selectMonthly,
   selectMonthlySold,
-  selectSoldThisMonth,
   selectWeekly,
   selectWeeklySold,
   selectDaily,

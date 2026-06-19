@@ -41,7 +41,7 @@ const Report = {
 const getDailyReports = async () =>{
     const [result]= await db.query(`
         SELECT 
-          r.fecha AS date,
+          r.fecha,
           r.motivo,
           a.titulo AS articulo_reportado,
           u.usuario
@@ -57,7 +57,7 @@ const getDailyReports = async () =>{
 const getWeeklyReports = async () =>{
     const [result]= await db.query(`
         SELECT 
-          r.fecha AS date,
+          r.fecha,
           r.motivo,
           a.titulo AS articulo_reportado,
           u.usuario
@@ -73,7 +73,7 @@ const getWeeklyReports = async () =>{
 const getMonthlyReports = async  () =>{
     const [result]= await db.query(`
         SELECT 
-          r.fecha AS date,
+          r.fecha,
           r.motivo,
           a.titulo AS articulo_reportado,
           u.usuario

@@ -50,7 +50,6 @@ Content-Type: application/json
 GET http://localhost:3000/api/transactions/anual/2026
 Content-Type: application/json
 
-<<<<<<< HEAD
 ### ARTICULOS publicados
 GET http://localhost:3000/api/article/published/this-month
 Content-Type: application/json
@@ -59,16 +58,18 @@ Content-Type: application/json
 GET http://localhost:3000/api/article/published/last-month
 Content-Type: application/json
 
-### ARTICULOS VENDIDOS
-GET ttp://localhost:3000/api/article/sold/last-month
+
+### ACTIVIDAD MENSUAL###
+
+###
+GET http://localhost:3000/api/activity/monthly
 
 ###
 GET http://localhost:3000/api/reports/badges-counters
-=======
 #################
 ####ARTÍCULOS####
 #################
 
 ### Obtener un articulo por su ID
 GET http://localhost:3000/api/article/25
->>>>>>> origin/develop
+

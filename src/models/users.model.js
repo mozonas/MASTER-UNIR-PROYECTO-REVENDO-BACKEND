@@ -118,7 +118,6 @@ const getByEmail = async (email) => {
     return rows[0]; // único usuario
 };
 
-
 /**Obtener usuarios creados mes actual */
 const selectUsersCurrentMonth = async () => {
   const [result] = await db.query(`
@@ -141,41 +140,23 @@ const selectUsersLastMonth = async () => {
   return result[0];
 };
 
-//** Seleccionar usuario nuevo por rango fecha para mostrar ACTIVIDAD DIARIA */
-    //diaria//
+//** Seleccionar usuario nuevo por rango fecha 
 
-const selectDailyUsers = async ()=>{
-    const [result] = await db.query(`
-        SELECT usuario,
-        created_at as fecha,
-        isBlocked
-        FROM usuarios
-        WHERE DATE (created_at) = CURDATE()
-        ORDER BY created_at DESC`);
-        return result;
-}
-const selectWeeklyUsers = async ()=>{
-    const [result] = await db.query(`
-        SELECT usuario,
-        created_at as fecha,
-        isBlocked
-        FROM usuarios
-        WHERE created_at >= CURDATE() -INTERVAL 7 DAY
-        ORDER BY created_at DESC`);
-        return result;
-}
-const selectMonthlyUsers = async ()=>{
-    const [result] = await db.query(`
-        SELECT usuario,
-        created_at as fecha,
-        isBlocked
-        FROM usuarios
-        WHERE MONTH (created_at)= MONTH(CURRENT_DATE())
-        ORDER BY created_at DESC`);
-        return result;
-}
-
-
+const selectUsersByRange = async (rango) => {
+  const [result] = await db.query(`
+    SELECT usuario,
+           created_at AS fecha,
+           isBlocked
+    FROM usuarios
+    WHERE ${rango}
+    ORDER BY created_at DESC
+  `);
+  return result; // Devuelve un array de filas para el .map() de la actividad
+};
+//definicion de los rangos daily, weekly y monthly
+const selectDailyUsers = () => selectUsersByRange(`DATE(created_at) = CURDATE()`);
+const selectWeeklyUsers = () => selectUsersByRange(`created_at >= CURDATE() - INTERVAL 7 DAY`);
+const selectMonthlyUsers = () => selectUsersByRange(`MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())`);
 
 
 module.exports = { 
@@ -185,9 +166,10 @@ module.exports = {
     selectByEmail, 
     selectUsersCurrentMonth, 
     selectUsersLastMonth,
+    selectUsersByRange,
     selectDailyUsers,
-    selectMonthlyUsers,
     selectWeeklyUsers, 
+    selectMonthlyUsers,
     getStats, 
     getValoraciones,
     getAllPaginated,

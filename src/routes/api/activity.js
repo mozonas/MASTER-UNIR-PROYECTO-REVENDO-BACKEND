@@ -1,8 +1,5 @@
 const router = require('express').Router();
 const ActivityCont = require ('../../controllers/activity.controller')
 
-router.get('/daily', ActivityCont.getDaily);
-router.get('/weekly', ActivityCont.getWeekly);
-router.get('/monthly', ActivityCont.getMonthly);
-
+router.get('/:range', ActivityCont.getActivity);
 module.exports = router

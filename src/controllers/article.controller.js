@@ -103,7 +103,7 @@ const getById = async (req, res) => {
   }
 };
 
-// Llamada al modelo soldThisMonth
+//**PARA DASHBOARD */
 const getSoldThisMonth = async (req, res)=>{
     try {
         const {month} = req.params;
@@ -119,8 +119,8 @@ const getSoldThisMonth = async (req, res)=>{
         console.error("ERROR EN CONTROLLER:", error);
          console.error(error);
         res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
-        }
-    }
+      }
+}
 
 // Llamada al modelo soldByyear
 const getSoldByYear = async (req, res)=>{
@@ -139,11 +139,10 @@ const getSoldByYear = async (req, res)=>{
     }
 }
 
-
 // LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
 const getThisMonth = async (req, res) =>{
     try {
-        const data = await selectByThisMonth()
+        const data = await ArticleModel.selectByThisMonth()
         res.json ({total: data.total})
     } catch (error) {
         console.error (error)
@@ -170,9 +169,9 @@ module.exports = {
   editArticle,
   eraseArticle,
   getById,
-    getAllUserArticles,
-    getThisMonth,
-    getLastMonth,
-    getSoldThisMonth,
-    getSoldByYear
+  getAllUserArticles,
+  getThisMonth,
+  getLastMonth,
+  getSoldThisMonth,
+  getSoldByYear
 };
