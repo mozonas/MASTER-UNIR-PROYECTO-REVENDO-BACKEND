@@ -23,6 +23,13 @@ const badgeCountersSchema = yup.object({
     pendingChatsCount: yup.number().required().integer().min(0)
 });
 
+const reportArticleSchema = yup.object({
+    body: yup.object({
+        motivo: yup.string().required().min(5).max(500),
+        usuarioId: yup.number().required().integer().positive()
+    })
+});
+
 const pendingArticleSchema = articleReportSchema.concat(yup.object({
     estado: yup.string().required().oneOf(['pendiente'])
 }));
@@ -46,8 +53,9 @@ const articlesHistoryArraySchema = yup.array().of(historyArticleSchema);
 const pendingChatsArraySchema = yup.array().of(pendingChatSchema);
 const chatsHistoryArraySchema = yup.array().of(historyChatSchema);
 
-module.exports = { 
+module.exports = {
     badgeCountersSchema,
+    reportArticleSchema,
     pendingArticlesArraySchema,
     articlesHistoryArraySchema,
     pendingChatsArraySchema,
