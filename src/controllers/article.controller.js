@@ -3,10 +3,13 @@ const {
   getArticle,
   getArticleFotos,
   getUserArticles,
+  createArticle,
   updateArticle,
   deleteArticle,
 } = require("../models/article.model");
+
 const UserModel = require("../models/users.model");
+const CategoryModel = require("../models/categories.model");
 
 const getAllUserArticles = async (req, res) => {
   const userId = req.params.userId;
@@ -15,6 +18,7 @@ const getAllUserArticles = async (req, res) => {
     const rawArticles = await getUserArticles(userId);
 
     return res.status(200).json({
+      status: "success",
       data: rawArticles,
     });
   } catch (error) {
@@ -39,6 +43,50 @@ const getAllArticles = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Error al obtener los artículos",
+    });
+  }
+};
+
+const getEnums = async (req, res) => {
+  try {
+    const categories = await CategoryModel.getAll();
+    return res.status(200).json({
+      status: "success",
+      data: {
+        categorias: categories,
+        estadoVenta: ["DISPONIBLE", "VENDIDO", "RESERVADO", "EN_REVISION", "RETIRADO"],
+        estadoProducto: ["NUEVO", "BUEN_ESTADO", "USADO", "REACONDICIONADO"],
+        tipoEntrega: ["RECOGIDA_EN_PERSONA", "ENVIO", "AMBAS"],
+        tipoPago: ["EFECTIVO", "TRANSFERENCIA", "BIZUM", "TARJETA"],
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener enums del artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener enums del artículo",
+    });
+  }
+};
+
+const createArticleHandler = async (req, res) => {
+  try {
+    const userId = req.params.userId ?? req.body.usuarios_id;
+    const payload = {
+      ...req.body,
+      usuarios_id: userId,
+    };
+    const newArticleId = await createArticle(payload);
+    return res.status(201).json({
+      status: "success",
+      message: "Artículo creado correctamente",
+      data: { id: newArticleId },
+    });
+  } catch (error) {
+    console.error("Error al crear el artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al crear el artículo",
     });
   }
 };
@@ -97,7 +145,9 @@ const getById = async (req, res) => {
       });
     }
     const responseFotos = await getArticleFotos(id);
-    const responseArticleSeller = await UserModel.getById(id);
+    const responseArticleSeller = responseArticle?.usuarios_id
+      ? await UserModel.getById(responseArticle.usuarios_id)
+      : null;
 
     const response = {
       ...responseArticle,
@@ -159,6 +209,8 @@ const searchArticles = async (req, res) => {
 module.exports = {
   getAllUserArticles,
   getAllArticles,
+  getEnums,
+  createArticleHandler,
   editArticle,
   eraseArticle,
   searchArticles,

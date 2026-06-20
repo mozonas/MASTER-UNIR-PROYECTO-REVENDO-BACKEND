@@ -28,7 +28,8 @@ const articleInfo = `
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
-  LEFT JOIN categorias c ON a.categorias_id = c.id`;
+  LEFT JOIN categorias c ON a.categorias_id = c.id
+  WHERE a.estadoVenta <> 'BORRADO'`;
 
 const getAll = async () => {
   try {
@@ -43,7 +44,7 @@ const getAll = async () => {
 const getUserArticles = async (userId) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM articulos WHERE usuarios_id = ?",
+      "SELECT * FROM articulos WHERE usuarios_id = ? AND estadoVenta <> 'BORRADO'",
       [userId],
     );
     return rows;
@@ -62,17 +63,17 @@ const getArticle = async (id) => {
       `SELECT 
 a.*,
 c.nombre AS categoria,
-d.direccion AS calle_direccion_vendedor, 
-d.codigo_postal AS cp_direccion_vendedor, 
-d.ciudad AS ciudad_direccion_vendedor, 
-d.provincia AS provincia_direccion_vendedor, 
-d.pais AS pais_direccion_vendedor
+COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
+COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
+COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
+COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
+COALESCE(d.pais, '') AS pais_direccion_vendedor
 FROM articulos a 
 INNER JOIN categorias c
     ON a.categorias_id = c.id 
 INNER JOIN usuarios u
     ON u.id = a.usuarios_id 
-INNER JOIN direcciones d
+LEFT JOIN direcciones d
     ON d.usuario_id = u.id 
  where a.id = ?`,
       [id],
@@ -126,11 +127,35 @@ const updateArticle = async (articleId, updatedData) => {
   }
 };
 
+const createArticle = async (articleData) => {
+  try {
+    const payload = {
+      titulo: articleData.titulo,
+      descripcion: articleData.descripcion,
+      precio: articleData.precio,
+      estadoVenta: articleData.estadoVenta || 'DISPONIBLE',
+      estadoProducto: articleData.estadoProducto ?? null,
+      tipoEntrega: articleData.tipoEntrega,
+      tipoPago: articleData.tipoPago,
+      created_at: articleData.created_at || new Date(),
+      usuarios_id: articleData.usuarios_id,
+      categorias_id: articleData.categorias_id,
+    };
+
+    const [result] = await pool.query("INSERT INTO articulos SET ?", [payload]);
+    return result.insertId;
+  } catch (error) {
+    console.error("Error al crear el artículo:", error);
+    throw error;
+  }
+};
+
 const deleteArticle = async (articleId) => {
   try {
-    const [result] = await pool.query("DELETE FROM articulos WHERE id = ?", [
-      articleId,
-    ]);
+    const [result] = await pool.query(
+      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
+      [articleId],
+    );
     return result.affectedRows > 0;
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);
@@ -153,7 +178,7 @@ const searchArticles = async (filters) => {
   const limit = 12;
   const offset = (page - 1) * limit;
 
-  let where = `WHERE a.estadoVenta = 'DISPONIBLE'`;
+  let where = `WHERE a.estadoVenta = 'DISPONIBLE' AND a.estadoVenta <> 'BORRADO'`;
   let params = [];
 
   // Texto en título o descripción
@@ -234,6 +259,7 @@ const searchArticles = async (filters) => {
 module.exports = {
   getAll,
   getUserArticles,
+  createArticle,
   updateArticle,
   deleteArticle,
   getArticle,
