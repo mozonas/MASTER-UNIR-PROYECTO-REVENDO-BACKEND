@@ -2,6 +2,7 @@ const {
   getAll,
   getArticle,
   getArticleFotos,
+  getArticleEnums,
   getUserArticles,
   createArticle,
   updateArticle,
@@ -50,14 +51,16 @@ const getAllArticles = async (req, res) => {
 const getEnums = async (req, res) => {
   try {
     const categories = await CategoryModel.getAll();
+    const articleEnums = await getArticleEnums();
+
     return res.status(200).json({
       status: "success",
       data: {
         categorias: categories,
-        estadoVenta: ["DISPONIBLE", "VENDIDO", "RESERVADO", "EN_REVISION", "RETIRADO"],
-        estadoProducto: ["NUEVO", "BUEN_ESTADO", "USADO", "REACONDICIONADO"],
-        tipoEntrega: ["RECOGIDA_EN_PERSONA", "ENVIO", "AMBAS"],
-        tipoPago: ["EFECTIVO", "TRANSFERENCIA", "BIZUM", "TARJETA"],
+        estadoVenta: articleEnums.estadoVenta,
+        estadoProducto: articleEnums.estadoProducto,
+        tipoEntrega: articleEnums.tipoEntrega,
+        tipoPago: articleEnums.tipoPago,
       },
     });
   } catch (error) {

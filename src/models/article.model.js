@@ -41,6 +41,40 @@ const getAll = async () => {
   }
 };
 
+const parseMysqlEnumType = (columnType) => {
+  if (!columnType) return [];
+
+  const match = columnType.match(/^enum\((.*)\)$/i);
+  if (!match) return [];
+
+  return match[1]
+    .split(",")
+    .map((value) => value.trim().replace(/^'/, "").replace(/'$/, ""));
+};
+
+const getArticleEnums = async () => {
+  const fields = ["estadoVenta", "estadoProducto", "tipoEntrega", "tipoPago"];
+
+  try {
+    const [rows] = await pool.query(
+      `SHOW COLUMNS FROM articulos WHERE Field IN ('estadoVenta', 'estadoProducto', 'tipoEntrega', 'tipoPago')`,
+    );
+
+    const enumsByField = rows.reduce((acc, row) => {
+      acc[row.Field] = parseMysqlEnumType(row.Type);
+      return acc;
+    }, {});
+
+    return fields.reduce((acc, field) => {
+      acc[field] = enumsByField[field] || [];
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error("Error al obtener enums del artículo desde BBDD:", error);
+    throw error;
+  }
+};
+
 const getUserArticles = async (userId) => {
   try {
     const [rows] = await pool.query(
@@ -259,6 +293,7 @@ const searchArticles = async (filters) => {
 module.exports = {
   getAll,
   getUserArticles,
+  getArticleEnums,
   createArticle,
   updateArticle,
   deleteArticle,
