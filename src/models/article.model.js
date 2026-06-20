@@ -78,7 +78,30 @@ const getArticleEnums = async () => {
 const getUserArticles = async (userId) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM articulos WHERE usuarios_id = ? AND estadoVenta <> 'BORRADO'",
+      `SELECT
+        a.id,
+        a.titulo,
+        a.descripcion,
+        a.precio,
+        a.estadoVenta,
+        a.estadoProducto,
+        a.tipoEntrega,
+        a.tipoPago,
+        a.created_at,
+        a.usuarios_id,
+        a.categorias_id,
+        c.nombre AS categoria_nombre,
+        (
+          SELECT f.url
+          FROM fotos f
+          WHERE f.articulos_id = a.id
+          ORDER BY f.id ASC
+          LIMIT 1
+        ) AS foto
+      FROM articulos a
+      LEFT JOIN categorias c ON a.categorias_id = c.id
+      WHERE a.usuarios_id = ? AND a.estadoVenta <> 'BORRADO'
+      ORDER BY a.id DESC`,
       [userId],
     );
     return rows;
@@ -162,6 +185,29 @@ const updateArticle = async (articleId, updatedData) => {
 };
 
 const createArticle = async (articleData) => {
+  const rawImages = Array.isArray(articleData.images)
+    ? articleData.images
+    : [
+        articleData.image1,
+        articleData.image2,
+        articleData.image3,
+        articleData.image4,
+        articleData.image5,
+        articleData.image,
+      ];
+
+  const images = rawImages
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => !!value)
+    .slice(0, 5);
+
+  if (!images.length) {
+    const validationError = new Error("La primera imagen es obligatoria");
+    validationError.statusCode = 400;
+    throw validationError;
+  }
+
+  const connection = await pool.getConnection();
   try {
     const payload = {
       titulo: articleData.titulo,
@@ -176,11 +222,25 @@ const createArticle = async (articleData) => {
       categorias_id: articleData.categorias_id,
     };
 
-    const [result] = await pool.query("INSERT INTO articulos SET ?", [payload]);
+    await connection.beginTransaction();
+    const [result] = await connection.query("INSERT INTO articulos SET ?", [payload]);
+
+    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId]);
+    for (const fotoRow of fotosRows) {
+      await connection.query(
+        "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+        fotoRow,
+      );
+    }
+
+    await connection.commit();
     return result.insertId;
   } catch (error) {
+    await connection.rollback();
     console.error("Error al crear el artículo:", error);
     throw error;
+  } finally {
+    connection.release();
   }
 };
 

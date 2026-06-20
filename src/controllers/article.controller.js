@@ -75,6 +75,17 @@ const getEnums = async (req, res) => {
 const createArticleHandler = async (req, res) => {
   try {
     const userId = req.params.userId ?? req.body.usuarios_id;
+    const firstImage = Array.isArray(req.body.images)
+      ? (req.body.images[0] ?? "")
+      : (req.body.image1 ?? req.body.image ?? "");
+
+    if (!String(firstImage).trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "La primera imagen es obligatoria",
+      });
+    }
+
     const payload = {
       ...req.body,
       usuarios_id: userId,
@@ -87,9 +98,10 @@ const createArticleHandler = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear el artículo:", error);
-    return res.status(500).json({
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
       status: "error",
-      message: "Error al crear el artículo",
+      message: statusCode === 500 ? "Error al crear el artículo" : error.message,
     });
   }
 };
