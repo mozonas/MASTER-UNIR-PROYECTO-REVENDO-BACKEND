@@ -9,20 +9,21 @@
 const express = require("express");
 
 const {
-  getAllUserArticles,
+  getAllArticles,
   getById,
-  getEnums,
   searchArticles
 } = require("../../controllers/article.controller");
 
 const router = express.Router();
 console.log("Router de articulos creado.");
 
-// 5. Definir las rutas para cada operacion (GET, POST, PUT, DELETE)
-router.get("/enums", getEnums);       // GET /api/article/enums
-router.get("/", getAllUserArticles);  // GET /api/article
-router.get("/:id", getById);          // GET /api/article/:id
+// 👉 SIEMPRE PRIMERO
 router.get("/search", searchArticles);
 
-module.exports = router;
+// 👉 LUEGO LAS RUTAS NORMALES
+router.get("/", getAllArticles);
 
+// 👉 SIEMPRE AL FINAL
+router.get("/:id", getById);
+
+module.exports = router;

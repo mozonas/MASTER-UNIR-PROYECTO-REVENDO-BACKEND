@@ -13,11 +13,22 @@ const articleInfo = `
     a.created_at,
     a.usuarios_id,
     a.categorias_id,
-    f.url AS foto,
-    atr.reportes_id AS estado_reporte
+    c.nombre AS categoria_nombre,
+    (
+      SELECT f.url
+      FROM fotos f
+      WHERE f.articulos_id = a.id
+      ORDER BY f.id ASC
+      LIMIT 1
+    ) AS foto,
+    (
+      SELECT atr.reportes_id
+      FROM articulos_tiene_reportes atr
+      WHERE atr.articulos_id = a.id
+      LIMIT 1
+    ) AS estado_reporte
   FROM articulos a
-  LEFT JOIN fotos f ON a.id = f.articulos_id
-  LEFT JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id`;
+  LEFT JOIN categorias c ON a.categorias_id = c.id`;
 
 const getAll = async () => {
   try {
@@ -29,17 +40,12 @@ const getAll = async () => {
   }
 };
 
-getUserArticles = async (userId, estado) => {
+const getUserArticles = async (userId) => {
   try {
-    let query = "SELECT * FROM articulos WHERE usuarios_id = ?";
-    const params = [userId];
-
-    if (estado && estado !== 'all') {
-      query += ' AND estadoVenta = ?';
-      params.push(estado);
-    }
-
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.query(
+      "SELECT * FROM articulos WHERE usuarios_id = ?",
+      [userId],
+    );
     return rows;
   } catch (error) {
     console.error("Error al obtener los artículos del usuario:", error);
@@ -105,80 +111,6 @@ FROM fotos f
     console.error("Error al obtener las fotos del artículo:", error);
     throw error;
   }
-};
-
-createArticle = async (articleData) => {
-  try {
-    const payload = {
-      titulo: articleData.titulo,
-      descripcion: articleData.descripcion,
-      precio: articleData.precio,
-      estadoVenta: articleData.estadoVenta || 'DISPONIBLE',
-      estadoProducto: articleData.estadoProducto || null,
-      tipoEntrega: articleData.tipoEntrega,
-      tipoPago: articleData.tipoPago,
-      usuarios_id: articleData.usuarios_id,
-      categorias_id: articleData.categorias_id
-    };
-    const [result] = await pool.query('INSERT INTO articulos SET ?', [payload]);
-    return result.insertId;
-  } catch (error) {
-    console.error('Error al crear el artículo:', error);
-    throw error;
-  }
-};
-
-getArticleEnums = async () => {
-  try {
-    const enumFields = ['estadoProducto', 'tipoEntrega', 'tipoPago'];
-    const [rows] = await pool.query(
-      `SELECT COLUMN_NAME, COLUMN_TYPE
-       FROM INFORMATION_SCHEMA.COLUMNS
-       WHERE TABLE_NAME = 'articulos'
-         AND COLUMN_NAME IN ('estadoProducto', 'tipoEntrega', 'tipoPago')
-         AND TABLE_SCHEMA = DATABASE()`
-    );
-
-    const enums = {
-      estadoProducto: [],
-      tipoEntrega: [],
-      tipoPago: []
-    };
-
-    for (const row of rows) {
-      // COLUMN_TYPE looks like: enum('Nuevo','Como nuevo','Buen estado')
-      const match = row.COLUMN_TYPE.match(/^enum\((.+)\)$/i);
-      if (match && enumFields.includes(row.COLUMN_NAME)) {
-        const values = [];
-        const regex = /'((?:\\'|[^'])*)'/g;
-        let result;
-
-        while ((result = regex.exec(match[1])) !== null) {
-          values.push(result[1].replace(/\\'/g, "'"));
-        }
-
-        enums[row.COLUMN_NAME] = values;
-      }
-    }
-
-    return enums;
-  } catch (error) {
-    console.error('Error al obtener ENUMs del artículo:', error);
-    throw error;
-  }
-};
-
-deleteArticle = async (articleId) => {
-    try {
-        const [result] = await pool.query(
-          'UPDATE articulos SET estadoVenta = ? WHERE id = ?',
-          ['BORRADO', articleId]
-        );
-        return result.affectedRows > 0;
-    } catch (error) {
-        console.error('Error al eliminar el artículo:', error);
-        throw error;
-    }
 };
 
 const updateArticle = async (articleId, updatedData) => {
@@ -300,13 +232,11 @@ const searchArticles = async (filters) => {
 
 
 module.exports = {
-    getAll,
-    getUserArticles,
-    createArticle,
-    updateArticle,
-    deleteArticle,
+  getAll,
+  getUserArticles,
+  updateArticle,
+  deleteArticle,
   getArticle,
-  getArticleEnums
-
+  getArticleFotos,
+  searchArticles,
 };
-}
