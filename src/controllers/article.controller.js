@@ -2,11 +2,15 @@ const {
   getAll,
   getArticle,
   getArticleFotos,
+  getArticleEnums,
   getUserArticles,
+  createArticle,
   updateArticle,
   deleteArticle,
 } = require("../models/article.model");
+
 const UserModel = require("../models/users.model");
+const CategoryModel = require("../models/categories.model");
 
 const getAllUserArticles = async (req, res) => {
   const userId = req.params.userId;
@@ -15,6 +19,7 @@ const getAllUserArticles = async (req, res) => {
     const rawArticles = await getUserArticles(userId);
 
     return res.status(200).json({
+      status: "success",
       data: rawArticles,
     });
   } catch (error) {
@@ -22,6 +27,81 @@ const getAllUserArticles = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Error al obtener los artículos del usuario",
+    });
+  }
+};
+
+const getAllArticles = async (req, res) => {
+  try {
+    const rawArticles = await getAll();
+
+    return res.status(200).json({
+      status: "success",
+      data: rawArticles,
+    });
+  } catch (error) {
+    console.error("Error al obtener los artículos:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener los artículos",
+    });
+  }
+};
+
+const getEnums = async (req, res) => {
+  try {
+    const categories = await CategoryModel.getAll();
+    const articleEnums = await getArticleEnums();
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        categorias: categories,
+        estadoVenta: articleEnums.estadoVenta,
+        estadoProducto: articleEnums.estadoProducto,
+        tipoEntrega: articleEnums.tipoEntrega,
+        tipoPago: articleEnums.tipoPago,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener enums del artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener enums del artículo",
+    });
+  }
+};
+
+const createArticleHandler = async (req, res) => {
+  try {
+    const userId = req.params.userId ?? req.body.usuarios_id;
+    const firstImage = Array.isArray(req.body.images)
+      ? (req.body.images[0] ?? "")
+      : (req.body.image1 ?? req.body.image ?? "");
+
+    if (!String(firstImage).trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "La primera imagen es obligatoria",
+      });
+    }
+
+    const payload = {
+      ...req.body,
+      usuarios_id: userId,
+    };
+    const newArticleId = await createArticle(payload);
+    return res.status(201).json({
+      status: "success",
+      message: "Artículo creado correctamente",
+      data: { id: newArticleId },
+    });
+  } catch (error) {
+    console.error("Error al crear el artículo:", error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      status: "error",
+      message: statusCode === 500 ? "Error al crear el artículo" : error.message,
     });
   }
 };
@@ -80,7 +160,9 @@ const getById = async (req, res) => {
       });
     }
     const responseFotos = await getArticleFotos(id);
-    const responseArticleSeller = await UserModel.getById(id);
+    const responseArticleSeller = responseArticle?.usuarios_id
+      ? await UserModel.getById(responseArticle.usuarios_id)
+      : null;
 
     const response = {
       ...responseArticle,
@@ -141,6 +223,9 @@ const searchArticles = async (req, res) => {
 
 module.exports = {
   getAllUserArticles,
+  getAllArticles,
+  getEnums,
+  createArticleHandler,
   editArticle,
   eraseArticle,
   searchArticles,
