@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const articlesController = require('../../controllers/article.controller');
+const { checkAuthToken } = require('../../middlewares/auth.middleware');
+
+router.use(checkAuthToken);
 
 router.post('/:userId', articlesController.createArticleHandler);
 router.post('/', articlesController.createArticleHandler);

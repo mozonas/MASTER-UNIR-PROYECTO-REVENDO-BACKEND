@@ -171,7 +171,7 @@ FROM fotos f
   }
 };
 
-const updateArticle = async (articleId, updatedData) => {
+const updateArticle = async (articleId, requesterUserId, updatedData) => {
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
@@ -201,9 +201,10 @@ const updateArticle = async (articleId, updatedData) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
+    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ? AND usuarios_id = ?", [
       articlePayload,
       articleId,
+      requesterUserId,
     ]);
 
     if (result.affectedRows > 0) {
@@ -296,11 +297,11 @@ const createArticle = async (articleData) => {
   }
 };
 
-const deleteArticle = async (articleId) => {
+const deleteArticle = async (articleId, requesterUserId) => {
   try {
     const [result] = await pool.query(
-      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
-      [articleId],
+      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ? AND usuarios_id = ?",
+      [articleId, requesterUserId],
     );
     return result.affectedRows > 0;
   } catch (error) {
