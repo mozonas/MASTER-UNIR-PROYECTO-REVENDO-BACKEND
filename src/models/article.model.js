@@ -172,15 +172,67 @@ FROM fotos f
 };
 
 const updateArticle = async (articleId, updatedData) => {
+  const rawImages = Array.isArray(updatedData.images)
+    ? updatedData.images
+    : [
+        updatedData.image1,
+        updatedData.image2,
+        updatedData.image3,
+        updatedData.image4,
+        updatedData.image5,
+        updatedData.image,
+      ];
+
+  const images = rawImages
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => !!value)
+    .slice(0, 5);
+
+  const articlePayload = {
+    titulo: updatedData.titulo,
+    descripcion: updatedData.descripcion,
+    precio: updatedData.precio,
+    estadoProducto: updatedData.estadoProducto ?? null,
+    tipoEntrega: updatedData.tipoEntrega,
+    tipoPago: updatedData.tipoPago,
+    categorias_id: updatedData.categorias_id,
+  };
+
+  const connection = await pool.getConnection();
   try {
-    const [result] = await pool.query("UPDATE articulos SET ? WHERE id = ?", [
-      updatedData,
+    await connection.beginTransaction();
+    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
+      articlePayload,
       articleId,
     ]);
+
+    if (result.affectedRows > 0) {
+      if (images.length) {
+        await connection.query("DELETE FROM fotos WHERE articulos_id = ?", [articleId]);
+
+        const altText = articlePayload.titulo || updatedData.titulo || "";
+        for (const url of images) {
+          await connection.query(
+            "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+            [url, altText, articleId],
+          );
+        }
+      } else if (articlePayload.titulo) {
+        await connection.query(
+          "UPDATE fotos SET nombreAlt = ? WHERE articulos_id = ?",
+          [articlePayload.titulo, articleId],
+        );
+      }
+    }
+
+    await connection.commit();
     return result.affectedRows > 0;
   } catch (error) {
+    await connection.rollback();
     console.error("Error al actualizar el artículo:", error);
     throw error;
+  } finally {
+    connection.release();
   }
 };
 
