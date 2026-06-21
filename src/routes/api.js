@@ -22,5 +22,7 @@ router.use('/article', require('./api/article'));
 
 router.use ('/transactions', require ('./api/transactions'))
 
+//mog 210626 -> filtersHomeV3
+router.use ('/filters',require('./api/filters'))
 
 module.exports = router;
