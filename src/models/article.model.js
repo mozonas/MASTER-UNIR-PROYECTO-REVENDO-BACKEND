@@ -28,7 +28,8 @@ const articleInfo = `
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
-  LEFT JOIN categorias c ON a.categorias_id = c.id`;
+  LEFT JOIN categorias c ON a.categorias_id = c.id
+  WHERE a.estadoVenta <> 'BORRADO'`;
 
 const getAll = async () => {
   try {
@@ -40,10 +41,67 @@ const getAll = async () => {
   }
 };
 
+const parseMysqlEnumType = (columnType) => {
+  if (!columnType) return [];
+
+  const match = columnType.match(/^enum\((.*)\)$/i);
+  if (!match) return [];
+
+  return match[1]
+    .split(",")
+    .map((value) => value.trim().replace(/^'/, "").replace(/'$/, ""));
+};
+
+const getArticleEnums = async () => {
+  const fields = ["estadoVenta", "estadoProducto", "tipoEntrega", "tipoPago"];
+
+  try {
+    const [rows] = await pool.query(
+      `SHOW COLUMNS FROM articulos WHERE Field IN ('estadoVenta', 'estadoProducto', 'tipoEntrega', 'tipoPago')`,
+    );
+
+    const enumsByField = rows.reduce((acc, row) => {
+      acc[row.Field] = parseMysqlEnumType(row.Type);
+      return acc;
+    }, {});
+
+    return fields.reduce((acc, field) => {
+      acc[field] = enumsByField[field] || [];
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error("Error al obtener enums del artículo desde BBDD:", error);
+    throw error;
+  }
+};
+
 const getUserArticles = async (userId) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM articulos WHERE usuarios_id = ?",
+      `SELECT
+        a.id,
+        a.titulo,
+        a.descripcion,
+        a.precio,
+        a.estadoVenta,
+        a.estadoProducto,
+        a.tipoEntrega,
+        a.tipoPago,
+        a.created_at,
+        a.usuarios_id,
+        a.categorias_id,
+        c.nombre AS categoria_nombre,
+        (
+          SELECT f.url
+          FROM fotos f
+          WHERE f.articulos_id = a.id
+          ORDER BY f.id ASC
+          LIMIT 1
+        ) AS foto
+      FROM articulos a
+      LEFT JOIN categorias c ON a.categorias_id = c.id
+      WHERE a.usuarios_id = ? AND a.estadoVenta <> 'BORRADO'
+      ORDER BY a.id DESC`,
       [userId],
     );
     return rows;
@@ -62,17 +120,17 @@ const getArticle = async (id) => {
       `SELECT 
 a.*,
 c.nombre AS categoria,
-d.direccion AS calle_direccion_vendedor, 
-d.codigo_postal AS cp_direccion_vendedor, 
-d.ciudad AS ciudad_direccion_vendedor, 
-d.provincia AS provincia_direccion_vendedor, 
-d.pais AS pais_direccion_vendedor
+COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
+COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
+COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
+COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
+COALESCE(d.pais, '') AS pais_direccion_vendedor
 FROM articulos a 
 INNER JOIN categorias c
     ON a.categorias_id = c.id 
 INNER JOIN usuarios u
     ON u.id = a.usuarios_id 
-INNER JOIN direcciones d
+LEFT JOIN direcciones d
     ON d.usuario_id = u.id 
  where a.id = ?`,
       [id],
@@ -114,23 +172,136 @@ FROM fotos f
 };
 
 const updateArticle = async (articleId, updatedData) => {
+  const rawImages = Array.isArray(updatedData.images)
+    ? updatedData.images
+    : [
+        updatedData.image1,
+        updatedData.image2,
+        updatedData.image3,
+        updatedData.image4,
+        updatedData.image5,
+        updatedData.image,
+      ];
+
+  const images = rawImages
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => !!value)
+    .slice(0, 5);
+
+  const articlePayload = {
+    titulo: updatedData.titulo,
+    descripcion: updatedData.descripcion,
+    precio: updatedData.precio,
+    estadoProducto: updatedData.estadoProducto ?? null,
+    tipoEntrega: updatedData.tipoEntrega,
+    tipoPago: updatedData.tipoPago,
+    categorias_id: updatedData.categorias_id,
+  };
+
+  const connection = await pool.getConnection();
   try {
-    const [result] = await pool.query("UPDATE articulos SET ? WHERE id = ?", [
-      updatedData,
+    await connection.beginTransaction();
+    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
+      articlePayload,
       articleId,
     ]);
+
+    if (result.affectedRows > 0) {
+      if (images.length) {
+        await connection.query("DELETE FROM fotos WHERE articulos_id = ?", [articleId]);
+
+        const altText = articlePayload.titulo || updatedData.titulo || "";
+        for (const url of images) {
+          await connection.query(
+            "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+            [url, altText, articleId],
+          );
+        }
+      } else if (articlePayload.titulo) {
+        await connection.query(
+          "UPDATE fotos SET nombreAlt = ? WHERE articulos_id = ?",
+          [articlePayload.titulo, articleId],
+        );
+      }
+    }
+
+    await connection.commit();
     return result.affectedRows > 0;
   } catch (error) {
+    await connection.rollback();
     console.error("Error al actualizar el artículo:", error);
     throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const createArticle = async (articleData) => {
+  const rawImages = Array.isArray(articleData.images)
+    ? articleData.images
+    : [
+        articleData.image1,
+        articleData.image2,
+        articleData.image3,
+        articleData.image4,
+        articleData.image5,
+        articleData.image,
+      ];
+
+  const images = rawImages
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => !!value)
+    .slice(0, 5);
+
+  if (!images.length) {
+    const validationError = new Error("La primera imagen es obligatoria");
+    validationError.statusCode = 400;
+    throw validationError;
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    const payload = {
+      titulo: articleData.titulo,
+      descripcion: articleData.descripcion,
+      precio: articleData.precio,
+      estadoVenta: articleData.estadoVenta || 'DISPONIBLE',
+      estadoProducto: articleData.estadoProducto ?? null,
+      tipoEntrega: articleData.tipoEntrega,
+      tipoPago: articleData.tipoPago,
+      created_at: articleData.created_at || new Date(),
+      usuarios_id: articleData.usuarios_id,
+      categorias_id: articleData.categorias_id,
+    };
+
+    await connection.beginTransaction();
+    const [result] = await connection.query("INSERT INTO articulos SET ?", [payload]);
+
+    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId]);
+    for (const fotoRow of fotosRows) {
+      await connection.query(
+        "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+        fotoRow,
+      );
+    }
+
+    await connection.commit();
+    return result.insertId;
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al crear el artículo:", error);
+    throw error;
+  } finally {
+    connection.release();
   }
 };
 
 const deleteArticle = async (articleId) => {
   try {
-    const [result] = await pool.query("DELETE FROM articulos WHERE id = ?", [
-      articleId,
-    ]);
+    const [result] = await pool.query(
+      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
+      [articleId],
+    );
     return result.affectedRows > 0;
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);
@@ -153,7 +324,7 @@ const searchArticles = async (filters) => {
   const limit = 12;
   const offset = (page - 1) * limit;
 
-  let where = `WHERE a.estadoVenta = 'DISPONIBLE'`;
+  let where = `WHERE a.estadoVenta = 'DISPONIBLE' AND a.estadoVenta <> 'BORRADO'`;
   let params = [];
 
   // Texto en título o descripción
@@ -234,6 +405,8 @@ const searchArticles = async (filters) => {
 module.exports = {
   getAll,
   getUserArticles,
+  getArticleEnums,
+  createArticle,
   updateArticle,
   deleteArticle,
   getArticle,
