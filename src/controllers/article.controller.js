@@ -187,7 +187,6 @@ const getById = async (req, res) => {
 
 //mog 18062026 -> buscador de artículos//cargador de artículos desde la home
 //mog 18062026 -> buscador de artículos / cargador de artículos desde la home
-const ArticleModel = require("../models/article.model");
 
 const searchArticles = async (req, res) => {
   console.log("🟢 Entrando en searchArticles con filtros:", req.query);

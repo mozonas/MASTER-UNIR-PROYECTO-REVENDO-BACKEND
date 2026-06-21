@@ -482,10 +482,6 @@ const searchWithFilters = async (filters) => {
   return rows;
 };
 
-
-
-
-
 //**ARTICULOS VENDIDOS PARA ACTIVIDAD */
 const selectSold = async (rango) => {
   const [result] = await pool.query(`
@@ -626,7 +622,7 @@ module.exports = {
   getArticle,
   getArticleFotos,
   searchArticles,
-  searchWithFilters
+  searchWithFilters,
   selectSold,
   selectSoldThisMonth,
   selectSoldByYear,
