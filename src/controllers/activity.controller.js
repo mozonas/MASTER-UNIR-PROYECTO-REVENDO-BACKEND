@@ -1,5 +1,6 @@
 const Activity = require('../models/activity.model');
 
+//**Creación de un controller activity para centralizar el modelo activity */
 const getActivity = async (req, res) => {
   try {
     // 1. Captura el parámetro de la URL (:range) que viene de las rutas

@@ -2,6 +2,8 @@ const Users = require('./users.model');
 const Articles = require('./article.model');
 const Reports = require('./reports.model');
 
+//**CREACIÓN DE UN ACTIVITY MODEL PARA CENTRALIZAR LAS PETICIONES Y TRANSFORMARLAS PARA ENVIARLAS YA LISTAS AL FRONTEND */
+
 // Ordenar por fecha
 const sortByDate = (arr) =>
   arr.sort((a, b) => new Date(b.date) - new Date(a.date));
