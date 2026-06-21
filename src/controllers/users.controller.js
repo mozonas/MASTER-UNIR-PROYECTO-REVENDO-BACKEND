@@ -61,19 +61,24 @@ const edit = async (req, res) => {
         const { userId } = req.params;
         const { nombre, apellidos, email, usuario, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
 
+        // 🕵️‍♂️ LOG CONTROL: Abre la terminal de tu backend y mira qué llega EXACTAMENTE aquí
+        console.log("-> DIRECCIÓN ENTRANTE AL CONTROLADOR:", req.body.direccion);
+
         // Usuario actual del middleware (checkUserId)
         const usuarioActual = req.usuarioEncontrado;
 
-        // Si viene un archivo de Multer, usamos su nombre. Si no, dejamos la foto que ya tenía antes.
         let fotoFinal = usuarioActual.foto;
         if (req.file) {
             fotoFinal = req.file.filename;
         }
 
+        // Aseguramos que si viene un string vacío o undefined usemos el fallback correcto
+        const direccionA_Guardar = direccion ? direccion.trim() : '';
+
         await db.query(
             `UPDATE usuarios 
-     SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
-     WHERE id = ?`,
+             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
+             WHERE id = ?`,
             [
                 nombre || null,
                 apellidos || null,
@@ -82,13 +87,12 @@ const edit = async (req, res) => {
                 fotoFinal,
                 fecha_nacimiento || null,
                 perfil || 'USUARIO',
-                direccion || '',
+                direccionA_Guardar, // <--- Forzamos la variable limpia aquí
                 descripcion || null,
                 userId
             ]
         );
 
-        // Recuperamos el usuario actualizado usando el método real del modelo
         const userUpdated = await UserModel.getById(userId);
         res.json({ message: 'Usuario actualizado correctamente', user: userUpdated });
 

@@ -1,10 +1,16 @@
-/* 
-1. Importar el modulo Router de Express
-2. Importar el controlador de categoria
-3. Importar el middleware de validacion de categoria
-4. Definir ruta GET '/' para listar categorias
-5. Definir ruta POST '/' para crear categoria (aplicando el middleware)
-6. Definir ruta PUT '/:id' para actualizar el nombre de la categoria
-7. Definir ruta DELETE '/:id' para eliminar una categoria
-8. Exportar el enrutador de la API de categorias
-*/
+const express = require('express');
+const { getAll } = require('../../models/categories.model');
+
+const router = express.Router();
+
+router.get('/', async (req, res) => {
+    try {
+        const categories = await getAll();
+        res.status(200).json({ status: 'success', data: categories });
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+        res.status(500).json({ status: 'error', message: 'Error al obtener categorías' });
+    }
+});
+
+module.exports = router;

@@ -54,10 +54,25 @@ const remove = async (id) => {
     return result;
 };
 
+const getAll = async () => {
+    const [rows] = await db.query('SELECT id, nombre FROM categorias ORDER BY nombre ASC');
+    return rows;
+};
+
+const getByName = async (nombre) => {
+    const [rows] = await db.query(
+        'SELECT id, nombre FROM categorias WHERE LOWER(nombre) = LOWER(?) LIMIT 1',
+        [nombre]
+    );
+    return rows[0] || null;
+};
+
 module.exports = {
+    getAll,
     getAllPaginated,
     countAll,
     insert,
     update,
-    remove
+    remove,
+    getByName
 };

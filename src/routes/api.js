@@ -8,6 +8,8 @@ router.use('/users', require('./api/users'));
 router.use('/signup', require('./api/signup'));
 router.use('/login', require('./api/login'));
 router.use('/reports', require('./api/reports'));
+router.use('/categories', require('./api/category'));
+router.use('/articles', require('./api/article'));
 router.use('/user-sell', require('./api/userarticles'));
 router.use('/userarticles', require('./api/userarticles'));
 //mog 110626 -> Ruta admin
@@ -21,5 +23,7 @@ router.use ('/activity', require ('./api/activity'))
 //router.use('/messages', require('./api/messages'));
 
 
+//mog 210626 -> filtersHomeV3
+router.use ('/filters',require('./api/filters'))
 
 module.exports = router;

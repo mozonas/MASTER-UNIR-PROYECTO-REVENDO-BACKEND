@@ -2,13 +2,17 @@ const  {
   getAll,
   getArticle,
   getArticleFotos,
+  getArticleEnums,
   getUserArticles,
+  createArticle,
   updateArticle,
   deleteArticle,
   selectByThisMonth, 
   selectByLastMonth
 } = require("../models/article.model");
+
 const UserModel = require("../models/users.model");
+const CategoryModel = require("../models/categories.model");
 const ArticleModel = require ('../models/article.model')
 
 const getAllUserArticles = async (req, res) => {
@@ -18,6 +22,7 @@ const getAllUserArticles = async (req, res) => {
     const rawArticles = await getUserArticles(userId);
 
     return res.status(200).json({
+      status: "success",
       data: rawArticles,
     });
   } catch (error) {
@@ -25,6 +30,81 @@ const getAllUserArticles = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Error al obtener los artículos del usuario",
+    });
+  }
+};
+
+const getAllArticles = async (req, res) => {
+  try {
+    const rawArticles = await getAll();
+
+    return res.status(200).json({
+      status: "success",
+      data: rawArticles,
+    });
+  } catch (error) {
+    console.error("Error al obtener los artículos:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener los artículos",
+    });
+  }
+};
+
+const getEnums = async (req, res) => {
+  try {
+    const categories = await CategoryModel.getAll();
+    const articleEnums = await getArticleEnums();
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        categorias: categories,
+        estadoVenta: articleEnums.estadoVenta,
+        estadoProducto: articleEnums.estadoProducto,
+        tipoEntrega: articleEnums.tipoEntrega,
+        tipoPago: articleEnums.tipoPago,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener enums del artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener enums del artículo",
+    });
+  }
+};
+
+const createArticleHandler = async (req, res) => {
+  try {
+    const userId = req.params.userId ?? req.body.usuarios_id;
+    const firstImage = Array.isArray(req.body.images)
+      ? (req.body.images[0] ?? "")
+      : (req.body.image1 ?? req.body.image ?? "");
+
+    if (!String(firstImage).trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "La primera imagen es obligatoria",
+      });
+    }
+
+    const payload = {
+      ...req.body,
+      usuarios_id: userId,
+    };
+    const newArticleId = await createArticle(payload);
+    return res.status(201).json({
+      status: "success",
+      message: "Artículo creado correctamente",
+      data: { id: newArticleId },
+    });
+  } catch (error) {
+    console.error("Error al crear el artículo:", error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      status: "error",
+      message: statusCode === 500 ? "Error al crear el artículo" : error.message,
     });
   }
 };
@@ -83,7 +163,9 @@ const getById = async (req, res) => {
       });
     }
     const responseFotos = await getArticleFotos(id);
-    const responseArticleSeller = await UserModel.getById(id);
+    const responseArticleSeller = responseArticle?.usuarios_id
+      ? await UserModel.getById(responseArticle.usuarios_id)
+      : null;
 
     const response = {
       ...responseArticle,
@@ -102,6 +184,45 @@ const getById = async (req, res) => {
     });
   }
 };
+
+//mog 18062026 -> buscador de artículos//cargador de artículos desde la home
+//mog 18062026 -> buscador de artículos / cargador de artículos desde la home
+const ArticleModel = require("../models/article.model");
+
+const searchArticles = async (req, res) => {
+  console.log("🟢 Entrando en searchArticles con filtros:", req.query);
+  debugger; // Agrega un punto de interrupción aquí para depuración
+  try {
+    const filters = {
+      texto: req.query.texto || "",
+      categoria: req.query.categoria || null,
+      estado: req.query.estado || null,
+      min: req.query.min || 0,
+      max: req.query.max || 999999,
+      ubicacion: req.query.ubicacion || "",
+      orden: req.query.orden || "recientes",
+      page: parseInt(req.query.page) || 1,
+    };
+    console.log("🟢 Llamando a ArticleModel.searchArticles");
+
+    const result = await ArticleModel.searchArticles(filters);
+
+    return res.status(200).json({
+      status: "success",
+      data: result,
+    });
+
+  } catch (error) {
+    console.error("Error en searchArticles:", error);
+    console.error("🔴 ERROR en searchArticles:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Error interno en el servidor",
+    });
+  }
+};
+
 
 //**PARA DASHBOARD */
 const getSoldThisMonth = async (req, res)=>{
@@ -166,8 +287,12 @@ const getLastMonth = async (req,res) =>{
 }
 module.exports = {
   getAllUserArticles,
+  getAllArticles,
+  getEnums,
+  createArticleHandler,
   editArticle,
   eraseArticle,
+  searchArticles,
   getById,
   getAllUserArticles,
   getThisMonth,
