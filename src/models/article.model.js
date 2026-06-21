@@ -401,6 +401,89 @@ const searchArticles = async (filters) => {
   };
 };
 
+// mog 21062026 filtersHomeV3-> buscador desde /filters/search
+const searchWithFilters = async (filters) => {
+
+  // 🔥 CORRECCIÓN AQUÍ 🔥
+  const texto = filters.text || filters.texto || '';
+  const categoria = filters.categoria || '';
+  const estado = filters.estado || '';
+  const min = filters.min || '';
+  const max = filters.max || '';
+  const orden = filters.orden || '';
+
+  let where = `WHERE a.estadoVenta = 'DISPONIBLE'`;
+  const params = [];
+
+  // Texto
+  if (texto) {
+    where += ` AND (a.titulo LIKE ? OR a.descripcion LIKE ?)`;
+    params.push(`%${texto}%`, `%${texto}%`);
+  }
+
+  // Categoría
+  if (categoria) {
+    where += ` AND a.categorias_id = ?`;
+    params.push(categoria);
+  }
+
+  // Estado del producto
+  if (estado) {
+    where += ` AND a.estadoProducto = ?`;
+    params.push(estado);
+  }
+
+  // Precio mínimo
+  if (min) {
+    where += ` AND a.precio >= ?`;
+    params.push(min);
+  }
+
+  // Precio máximo
+  if (max) {
+    where += ` AND a.precio <= ?`;
+    params.push(max);
+  }
+
+  // Ordenación
+  let orderBy = `ORDER BY a.id DESC`;
+  if (orden === "precio_asc") orderBy = `ORDER BY a.precio ASC`;
+  if (orden === "precio_desc") orderBy = `ORDER BY a.precio DESC`;
+
+  const sql = `
+    SELECT 
+      a.id,
+      a.titulo,
+      a.descripcion,
+      a.precio,
+      a.estadoVenta,
+      a.estadoProducto,
+      a.tipoEntrega,
+      a.tipoPago,
+      a.created_at,
+      a.usuarios_id,
+      a.categorias_id,
+      c.nombre AS categoria,
+      (
+        SELECT f.url 
+        FROM fotos f 
+        WHERE f.articulos_id = a.id 
+        ORDER BY f.id ASC 
+        LIMIT 1
+      ) AS foto
+    FROM articulos a
+    INNER JOIN categorias c ON c.id = a.categorias_id
+    ${where}
+    ${orderBy}
+  `;
+
+  const [rows] = await pool.query(sql, params);
+  return rows;
+};
+
+
+
+
 
 module.exports = {
   getAll,
@@ -412,4 +495,5 @@ module.exports = {
   getArticle,
   getArticleFotos,
   searchArticles,
+  searchWithFilters
 };
