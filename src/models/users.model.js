@@ -62,4 +62,120 @@ const getValoraciones = async (id) => {
     return rows;
 }
 
-module.exports = { getAll, getById, insert, selectByEmail, getStats, getValoraciones };
+//mog 110626 -> Función para contar total de usuarios (para paginación)
+const getAllPaginated = async (limit, offset) => {
+    const [rows] = await db.query(
+        'SELECT id, nombre, apellidos, email, usuario, foto, fecha_nacimiento, direccion, perfil,isBlocked FROM usuarios LIMIT ? OFFSET ?',
+        [limit, offset]
+    );
+    return rows;
+};
+
+const countAll = async () => {
+    const [rows] = await db.query('SELECT COUNT(*) AS total FROM usuarios');
+    return rows[0].total;
+};
+
+
+// Eliminar usuario
+const deleteUser = async (id) => {
+    const [result] = await db.query(
+        'DELETE FROM usuarios WHERE id = ?',
+        [String(id)]
+    );
+    return result;
+};
+
+// Bloquear / desbloquear usuario
+const toggleBlock = async (id, isBlocked) => {
+    const [result] = await db.query(
+        'UPDATE usuarios SET isBlocked = ? WHERE id = ?',
+        [isBlocked, String(id)]
+    );
+    return result;
+};
+
+// ===============================
+//   BUSCAR POR USERNAME (único)
+// ===============================
+const getByUsername = async (username) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE usuario = ?',
+        [username]
+    );
+    return rows[0]; // único usuario
+};
+
+
+// ===============================
+//   BUSCAR POR EMAIL (único)
+// ===============================
+const getByEmail = async (email) => {
+    const [rows] = await db.query(
+        'SELECT * FROM usuarios WHERE email = ?',
+        [email]
+    );
+    return rows[0]; // único usuario
+};
+
+/**Obtener usuarios creados mes actual */
+const selectUsersCurrentMonth = async () => {
+  const [result] = await db.query(`
+    SELECT COUNT(*) AS total
+    FROM usuarios
+    WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(created_at) = YEAR(CURRENT_DATE())
+  `);
+  return result[0];
+};
+
+/**Obtener usuarios creados mes anterior */
+const selectUsersLastMonth = async () => {
+  const [result] = await db.query(`
+    SELECT COUNT(*) AS total
+    FROM usuarios
+    WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+      AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
+  `);
+  return result[0];
+};
+
+//** Seleccionar usuario nuevo por rango fecha 
+
+const selectUsersByRange = async (rango) => {
+  const [result] = await db.query(`
+    SELECT usuario,
+           created_at AS fecha,
+           isBlocked
+    FROM usuarios
+    WHERE ${rango}
+    ORDER BY created_at DESC
+  `);
+  return result; // Devuelve un array de filas para el .map() de la actividad
+};
+//definicion de los rangos daily, weekly y monthly
+const selectDailyUsers = () => selectUsersByRange(`DATE(created_at) = CURDATE()`);
+const selectWeeklyUsers = () => selectUsersByRange(`created_at >= CURDATE() - INTERVAL 7 DAY`);
+const selectMonthlyUsers = () => selectUsersByRange(`MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())`);
+
+
+module.exports = { 
+    getAll, 
+    getById, 
+    insert, 
+    selectByEmail, 
+    selectUsersCurrentMonth, 
+    selectUsersLastMonth,
+    selectUsersByRange,
+    selectDailyUsers,
+    selectWeeklyUsers, 
+    selectMonthlyUsers,
+    getStats, 
+    getValoraciones,
+    getAllPaginated,
+    countAll,
+    deleteUser,
+    toggleBlock,
+    getByUsername,
+    getByEmail 
+ };

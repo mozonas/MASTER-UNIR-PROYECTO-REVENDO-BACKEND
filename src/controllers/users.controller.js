@@ -25,6 +25,22 @@ const getById = async (req, res) => {
     }
 };
 
+// Obtener usuarios nuevos mensuales y mes anterior
+const getUsersStats = async (req, res) => {
+  try {
+    const current = await UserModel.selectUsersCurrentMonth();
+    const last = await UserModel.selectUsersLastMonth();
+    res.json({
+      usuariosMesActual: current.total,
+      usuariosMesAnterior: last.total,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+  }
+};
+
 const create = async (req, res) => {
     try {
         const result = await UserModel.insert(req.body);
@@ -45,14 +61,19 @@ const edit = async (req, res) => {
         const { userId } = req.params;
         const { nombre, apellidos, email, usuario, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
 
+        // 🕵️‍♂️ LOG CONTROL: Abre la terminal de tu backend y mira qué llega EXACTAMENTE aquí
+        console.log("-> DIRECCIÓN ENTRANTE AL CONTROLADOR:", req.body.direccion);
+
         // Usuario actual del middleware (checkUserId)
         const usuarioActual = req.usuarioEncontrado;
 
-        // Si viene un archivo de Multer, usamos su nombre. Si no, dejamos la foto que ya tenía antes.
         let fotoFinal = usuarioActual.foto;
         if (req.file) {
             fotoFinal = req.file.filename;
         }
+
+        // Aseguramos que si viene un string vacío o undefined usemos el fallback correcto
+        const direccionA_Guardar = direccion ? direccion.trim() : '';
 
         await db.query(
             `UPDATE usuarios 
@@ -66,13 +87,12 @@ const edit = async (req, res) => {
                 fotoFinal,
                 fecha_nacimiento || null,
                 perfil || 'USUARIO',
-                direccion || null,
+                direccionA_Guardar, // <--- Forzamos la variable limpia aquí
                 descripcion || null,
                 userId
             ]
         );
 
-        // Recuperamos el usuario actualizado usando el método real del modelo
         const userUpdated = await UserModel.getById(userId);
         res.json({ message: 'Usuario actualizado correctamente', user: userUpdated });
 
@@ -141,7 +161,7 @@ const getValoraciones = async (req, res) => {
         // 1. Primero validamos si está vacío
         if (!valoraciones || valoraciones.length === 0) {
             // Devolvemos un array vacío para que el frontend (listaValoraciones.length === 0) funcione correctamente
-            return res.json([]); 
+            return res.json([]);
         }
 
         // 2. Si tiene datos, los enviamos una sola vez
@@ -153,6 +173,22 @@ const getValoraciones = async (req, res) => {
     }
 }
 
+    const getUsuariosByRange = async (req, res) => {
+      try {
+    // 1. Captura el rango de la URL 
+    const { range } = req.params; 
+
+    // 2. Llama al modelo pasando el rango
+    const usuarios = await usuariosModel.selectUsersByRange(range);
+
+    // 3. Responde al frontend con los datos en formato JSON
+    return res.status(200).json(usuarios);
+      } catch (error) {
+    // Manejo de errores por si falla la base de datos
+    return res.status(500).json({ error: error.message });
+      }
+    };
+
 module.exports = {
-    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
+    getAll, getById, getUsersStats, create, edit, remove, register, getStatistics, getValoraciones, getUsuariosByRange
 }
