@@ -4,7 +4,7 @@ const db = require('../config/db');
 
 const getByArticulo = async (articulos_id) => {
     const [rows] = await db.query(
-        `SELECT m.*, u.nombre, u.apellidos, u.foto 
+        `SELECT m.*, u.usuario, u.foto 
          FROM mensajes m
          JOIN usuarios u ON m.usuarios_id = u.id
          WHERE m.articulos_id = ?
@@ -17,7 +17,7 @@ const getByArticulo = async (articulos_id) => {
 const getByUsuario = async (usuarios_id) => {
     const [rows] = await db.query(
         `SELECT a.id as articulos_id, a.titulo,
-         u.id as otro_usuario_id, u.nombre, u.foto,
+         u.id as otro_usuario_id, u.usuario, u.foto,
          (SELECT contenido FROM mensajes 
           WHERE articulos_id = a.id 
           ORDER BY created_at DESC LIMIT 1) as ultimo_mensaje,
