@@ -181,7 +181,7 @@ const getValoraciones = async (req, res) => {
     // 2. Llama al modelo pasando el rango
     const usuarios = await usuariosModel.selectUsersByRange(range);
 
-    // 3. Responde al frontend con los datos en formato JSON
+    // 3. Responde al frontend con los datos 
     return res.status(200).json(usuarios);
       } catch (error) {
     // Manejo de errores por si falla la base de datos

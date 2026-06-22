@@ -274,7 +274,7 @@ const getThisMonth = async (req, res) =>{
 
 const getLastMonth = async (req,res) =>{
     try {
-        const data = await selectByLastMonth();
+        const data = await ArticleModel.selectByLastMonth();
         res.json ({total: data.total})
     } catch (error) {
         console.error (error)
@@ -284,6 +284,27 @@ const getLastMonth = async (req,res) =>{
         
     }
 }
+
+//Controlador unificado para la Metric Card de publicaciones
+const getPublishedComp = async (req,res)=>{
+  try{
+    const [thisMonthData, lastMonthData] = await Promise.all([
+      ArticleModel.selectByThisMonth(),
+      ArticleModel.selectByLastMonth()
+    ]);
+    const thisMonth = thisMonthData?.total || 0;
+    const lastMonth = lastMonthData?.total || 0;
+    const difference = thisMonth -lastMonth;
+    return res.json ({thisMonth, lastMonth, difference});
+  }catch (error){
+    console.error('Error en getPublishedComparison:', error);
+        return res.status(500).json({ 
+            message: 'Error interno del servidor al calcular la comparativa.' 
+        });
+  }
+}
+
+
 module.exports = {
   getAllUserArticles,
   getAllArticles,
@@ -297,5 +318,6 @@ module.exports = {
   getThisMonth,
   getLastMonth,
   getSoldThisMonth,
-  getSoldByYear
+  getSoldByYear, 
+  getPublishedComp
 };

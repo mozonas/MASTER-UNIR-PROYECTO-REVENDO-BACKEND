@@ -541,7 +541,6 @@ const selectSoldByYear = async (year) =>{
 //**PUBLICADOS COMPARATIVA PARA METRIC */
 //Obtener articulos publicados por mes
 const selectByThisMonth = async ()=>{
-    // seleccionar articulos publicados mes actual 
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
@@ -552,15 +551,13 @@ const selectByThisMonth = async ()=>{
 }
 // Articulos publicados el mes pasado
 const selectByLastMonth = async ()=>{
-    const now = new Date();
-    const primerDia = new Date(now.getFullYear(), now.getMonth()-1,1);
-    const ultimoDia= new Date (now.getFullYear(), now.getMonth(),0)
-
+  
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
-            WHERE created_at BETWEEN ? AND ?`,
-        [primerDia,ultimoDia])
+        WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+          AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
+    `);
         return result[0];
 }
 //**ARTICULOS CREADOS */
