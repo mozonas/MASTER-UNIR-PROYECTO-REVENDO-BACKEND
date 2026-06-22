@@ -25,10 +25,8 @@ console.log("Router de articulos creado.");
 // 👉 SIEMPRE PRIMERO
 router.get("/enums", getEnums);
 router.get("/search", searchArticles);
-// Ruta para extraer articulos publicados este mes y el anterior
-router.get ('/published/this-month', articleController.getThisMonth);
-router.get ('/published/last-month', articleController.getLastMonth);
-
+// Ruta para extraer comparación de articulos publicados este mes con el anterior
+router.get ('/published/comparison', articleController.getPublishedComp);
 // Ruta para extraer articulos vendidos este mes
 router.get ('/sold/:month', articleController.getSoldThisMonth);
 // Ruta para extraer articulos vendidos este año
