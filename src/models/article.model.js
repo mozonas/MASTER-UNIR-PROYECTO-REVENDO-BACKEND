@@ -171,7 +171,7 @@ FROM fotos f
   }
 };
 
-const updateArticle = async (articleId, requesterUserId, updatedData) => {
+const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny = false) => {
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
@@ -201,11 +201,19 @@ const updateArticle = async (articleId, requesterUserId, updatedData) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ? AND usuarios_id = ?", [
-      articlePayload,
-      articleId,
-      requesterUserId,
-    ]);
+    let result;
+    if (canEditAny) {
+      [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
+        articlePayload,
+        articleId,
+      ]);
+    } else {
+      [result] = await connection.query("UPDATE articulos SET ? WHERE id = ? AND usuarios_id = ?", [
+        articlePayload,
+        articleId,
+        requesterUserId,
+      ]);
+    }
 
     if (result.affectedRows > 0) {
       if (images.length) {
@@ -297,12 +305,21 @@ const createArticle = async (articleData) => {
   }
 };
 
-const deleteArticle = async (articleId, requesterUserId) => {
+const deleteArticle = async (articleId, requesterUserId, canDeleteAny = false) => {
   try {
-    const [result] = await pool.query(
-      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ? AND usuarios_id = ?",
-      [articleId, requesterUserId],
-    );
+    let result;
+    if (canDeleteAny) {
+      [result] = await pool.query(
+        "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
+        [articleId],
+      );
+    } else {
+      [result] = await pool.query(
+        "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ? AND usuarios_id = ?",
+        [articleId, requesterUserId],
+      );
+    }
+
     return result.affectedRows > 0;
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);

@@ -119,6 +119,8 @@ const editArticle = async (req, res) => {
     const articleId = req.params.articleId;
     const updatedData = req.body;
     const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
 
     if (!requesterUserId) {
       return res.status(401).json({
@@ -127,7 +129,7 @@ const editArticle = async (req, res) => {
       });
     }
 
-    const result = await updateArticle(articleId, requesterUserId, updatedData);
+    const result = await updateArticle(articleId, requesterUserId, updatedData, canEditAny);
     if (result) {
       return res.status(200).json({
         status: "success",
@@ -152,6 +154,8 @@ const eraseArticle = async (req, res) => {
   try {
     const articleId = req.params.articleId;
     const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canDeleteAny = requesterRole === 'MODERADOR' || requesterRole === 'ADMIN';
 
     if (!requesterUserId) {
       return res.status(401).json({
@@ -160,7 +164,7 @@ const eraseArticle = async (req, res) => {
       });
     }
 
-    const result = await deleteArticle(articleId, requesterUserId);
+    const result = await deleteArticle(articleId, requesterUserId, canDeleteAny);
     if (result) {
       return res.status(200).json({
         status: "success",
@@ -184,6 +188,8 @@ const eraseArticle = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
     if (!requesterUserId) {
       return res.status(401).json({
         status: "error",
@@ -202,7 +208,7 @@ const getById = async (req, res) => {
       });
     }
 
-    if (Number(responseArticle.usuarios_id) !== requesterUserId) {
+    if (!canEditAny && Number(responseArticle.usuarios_id) !== requesterUserId) {
       return res.status(403).json({
         status: "error",
         message: "No autorizado para editar este artículo",
