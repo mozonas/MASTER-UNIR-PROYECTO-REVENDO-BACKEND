@@ -1,5 +1,4 @@
 const pool = require("../config/db");
-const { selectByMonth } = require('./transactions.model');
 
 const articleInfo = `
   SELECT
@@ -483,134 +482,8 @@ const searchWithFilters = async (filters) => {
   return rows;
 };
 
-//**ARTICULOS VENDIDOS PARA ACTIVIDAD */
-const selectSold = async (rango) => {
-  const [result] = await pool.query(`
-    SELECT 
-      a.titulo,
-      a.descripcion,
-      a.created_at AS fecha,
-      a.estadoVenta,
-      u.nombre,
-      u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE ${rango}
-      AND a.estadoVenta = 'VENDIDO'
-    ORDER BY a.created_at DESC
-  `);
-  return result;
-};
 
-// 1. Vendidos HOY
-const selectDailySold = () => 
-  selectSold(`DATE(a.created_at) = CURDATE()`);
 
-// 2. Vendidos últimos 7 DÍAS
-const selectWeeklySold = () => 
-  selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
-
-// 3. Vendidos MES ACTUAL
-const selectMonthlySold = () => 
-  selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
-
-//**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
-// Obtener articulos vendidos al mes 
-const selectSoldThisMonth = async (month, year)=>{
-    const [result]= await pool.query (`
-       SELECT day(created_at) AS dia, COUNT(*) AS total
-       FROM articulos
-       WHERE estadoVenta = 'VENDIDO'
-       AND month(created_at) = ? AND year(created_at) =?
-       GROUP BY dia
-       ORDER BY dia ASC`,
-       [month, year]);
-       return result
-}
-// Obtener articulos vendidos mensuales por año
-const selectSoldByYear = async (year) =>{
-    const [result]= await pool.query(`
-       SELECT month(created_at) AS mes, COUNT(*) AS total
-       FROM articulos
-       WHERE estadoVenta = 'VENDIDO'
-        AND year(created_at) =?
-       GROUP BY mes
-       ORDER BY mes ASC`,
-       [year]);
-       return result;
-}
-//**PUBLICADOS COMPARATIVA PARA METRIC */
-//Obtener articulos publicados por mes
-const selectByThisMonth = async ()=>{
-    // seleccionar articulos publicados mes actual 
-    const [result]= await pool.query (`
-        SELECT COUNT(*) AS total
-        FROM articulos
-        WHERE month(created_at) = MONTH(CURRENT_DATE())
-            AND year(created_at) = YEAR(CURRENT_DATE())
-        `)
-        return result[0];
-}
-// Articulos publicados el mes pasado
-const selectByLastMonth = async ()=>{
-    const now = new Date();
-    const primerDia = new Date(now.getFullYear(), now.getMonth()-1,1);
-    const ultimoDia= new Date (now.getFullYear(), now.getMonth(),0)
-
-    const [result]= await pool.query (`
-        SELECT COUNT(*) AS total
-        FROM articulos
-            WHERE created_at BETWEEN ? AND ?`,
-        [primerDia,ultimoDia])
-        return result[0];
-}
-//**ARTICULOS CREADOS */
-//**Obtener actividad diaria de articulos */
-const selectDaily = async ()=>{
-  const [result] = await pool.query(`
-    SELECT 
-    a.titulo,
-    a.descripcion,
-    a.created_at AS fecha,
-    u.nombre,
-    u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE DATE(a.created_at) = CURDATE()
-    ORDER BY a.created_at DESC
-    `);
-    return result
-}
-const selectWeekly = async ()=>{
-  const [result] = await pool.query(`
-    SELECT 
-    a.titulo,
-    a.descripcion,
-    a.created_at AS fecha,
-    u.nombre,
-    u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE a.created_at >= CURDATE() -INTERVAL 7 DAY
-    ORDER BY a.created_at DESC
-    `);
-    return result
-}
-const selectMonthly = async () =>{ 
-  const [result] = await pool.query(`
-  SELECT 
-    a.titulo,
-    a.descripcion,
-    a.created_at AS fecha,
-    u.nombre,
-    u.apellidos
-    FROM articulos a
-    INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE MONTH(a.created_at) = MONTH(CURRENT_DATE())
-    ORDER BY a.created_at DESC
-    `);
-    return result
-}
 
 
 module.exports = {
@@ -623,16 +496,5 @@ module.exports = {
   getArticle,
   getArticleFotos,
   searchArticles,
-  searchWithFilters,
-  selectSold,
-  selectSoldThisMonth,
-  selectSoldByYear,
-  selectByThisMonth,
-  selectByLastMonth,
-  selectMonthly,
-  selectMonthlySold,
-  selectWeekly,
-  selectWeeklySold,
-  selectDaily,
-  selectDailySold
+  searchWithFilters
 };
