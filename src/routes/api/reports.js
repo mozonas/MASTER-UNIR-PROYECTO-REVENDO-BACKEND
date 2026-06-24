@@ -16,5 +16,9 @@ router.get('/articles/history', reportsController.getArticlesHistory);
 router.get('/chats/pending', reportsController.getPendingChats);
 router.get('/chats/history', reportsController.getChatsHistory);
 
+// Ruta para obtener el tipo de reporte
+router.get('/types', reportsController.getReportTypes);
+
+
 // Exportar el router para usarlo en el archivo principal de rutas
 module.exports = router;
