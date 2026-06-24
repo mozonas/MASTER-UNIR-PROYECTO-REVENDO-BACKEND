@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { getAll, create, remove, edit, getById, getStatistics, getValoraciones } = require('../../controllers/users.controller');
+const { getAll, create, remove, edit, getById, getStatistics, getValoraciones, getUsersStats } = require('../../controllers/users.controller');
 const { checkUserId } = require('../../middlewares/users.middleware');
 
 const { validateSchema } = require('../../middlewares/validations.middleware');

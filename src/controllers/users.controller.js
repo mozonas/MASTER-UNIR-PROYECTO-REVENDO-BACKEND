@@ -25,6 +25,22 @@ const getById = async (req, res) => {
     }
 };
 
+// Obtener usuarios nuevos mensuales y mes anterior
+const getUsersStats = async (req, res) => {
+  try {
+    const current = await UserModel.selectUsersCurrentMonth();
+    const last = await UserModel.selectUsersLastMonth();
+    res.json({
+      usuariosMesActual: current.total,
+      usuariosMesAnterior: last.total,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+  }
+};
+
 const create = async (req, res) => {
     try {
         const result = await UserModel.insert(req.body);
@@ -174,5 +190,5 @@ const getValoraciones = async (req, res) => {
     };
 
 module.exports = {
-    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
+    getAll, getById, getUsersStats, create, edit, remove, register, getStatistics, getValoraciones, getUsuariosByRange
 }
