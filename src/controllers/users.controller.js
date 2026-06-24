@@ -157,6 +157,22 @@ const getValoraciones = async (req, res) => {
     }
 }
 
+    const getUsuariosByRange = async (req, res) => {
+      try {
+    // 1. Captura el rango de la URL 
+    const { range } = req.params; 
+
+    // 2. Llama al modelo pasando el rango
+    const usuarios = await usuariosModel.selectUsersByRange(range);
+
+    // 3. Responde al frontend con los datos 
+    return res.status(200).json(usuarios);
+      } catch (error) {
+    // Manejo de errores por si falla la base de datos
+    return res.status(500).json({ error: error.message });
+      }
+    };
+
 module.exports = {
     getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
 }

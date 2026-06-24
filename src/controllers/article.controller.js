@@ -277,6 +277,88 @@ const searchArticles = async (req, res) => {
 };
 
 
+//**PARA DASHBOARD */
+const getSoldThisMonth = async (req, res)=>{
+    try {
+        const {month} = req.params;
+        const year = new Date().getFullYear()
+        if(!month){
+            return res.status (400).json({
+                message: 'month no recibido'
+            })
+        }
+        const ventasMensuales = await ArticleModel.selectSoldThisMonth(month, year)
+        res.json (ventasMensuales)
+    } catch (error) {
+        console.error("ERROR EN CONTROLLER:", error);
+         console.error(error);
+        res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
+      }
+}
+
+// Llamada al modelo soldByyear
+const getSoldByYear = async (req, res)=>{
+    try {
+        const {year}= req.params
+        if(!year){
+            return res.status (400).json ({
+            message: 'parámetro year no recibido'
+        })
+     }
+     const ventasAnuales = await ArticleModel.selectSoldByYear(year);
+     res.json (ventasAnuales)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error obteniendo fechas por año' });
+    }
+}
+
+// LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
+const getThisMonth = async (req, res) =>{
+    try {
+        const data = await ArticleModel.selectByThisMonth()
+        res.json ({total: data.total})
+    } catch (error) {
+        console.error (error)
+        return res.status (500).json({
+            message: ' Error devolviendo articulos publicados al mes'
+        })
+    }
+}
+
+const getLastMonth = async (req,res) =>{
+    try {
+        const data = await ArticleModel.selectByLastMonth();
+        res.json ({total: data.total})
+    } catch (error) {
+        console.error (error)
+        return res.status (500).json({
+            message:'Error devolviendo articulos publicados el mes pasado'
+        })
+        
+    }
+}
+
+//Controlador unificado para la Metric Card de publicaciones
+const getPublishedComp = async (req,res)=>{
+  try{
+    const [thisMonthData, lastMonthData] = await Promise.all([
+      ArticleModel.selectByThisMonth(),
+      ArticleModel.selectByLastMonth()
+    ]);
+    const thisMonth = thisMonthData?.total || 0;
+    const lastMonth = lastMonthData?.total || 0;
+    const difference = thisMonth -lastMonth;
+    return res.json ({thisMonth, lastMonth, difference});
+  }catch (error){
+    console.error('Error en getPublishedComparison:', error);
+        return res.status(500).json({ 
+            message: 'Error interno del servidor al calcular la comparativa.' 
+        });
+  }
+}
+
+
 module.exports = {
   getAllUserArticles,
   getAllArticles,
@@ -286,4 +368,10 @@ module.exports = {
   eraseArticle,
   searchArticles,
   getById,
+  getAllUserArticles,
+  getThisMonth,
+  getLastMonth,
+  getSoldThisMonth,
+  getSoldByYear, 
+  getPublishedComp
 };

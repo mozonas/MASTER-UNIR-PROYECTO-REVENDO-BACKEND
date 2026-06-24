@@ -9,6 +9,7 @@ const upload = require('../../middlewares/multer.middleware');
 
 // Rutas de /api/Users
 router.get('/', getAll);
+router.get('/stats/users', getUsersStats); 
 router.get('/:userId', checkUserId, getById);
 // router.get('/:userEmail', checkUserId, getByEmail);
 router.post('/', validateSchema(userSchema), create);
