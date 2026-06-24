@@ -21,10 +21,11 @@ const articleInfo = `
       ORDER BY f.id ASC
       LIMIT 1
     ) AS foto,
-    ( 
+    (
       SELECT atr.reportes_id
       FROM articulos_tiene_reportes atr
-      WHERE atr.articulos_id = a.id
+      INNER JOIN reportes r ON r.id = atr.reportes_id
+      WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
@@ -33,8 +34,8 @@ const articleInfo = `
     AND NOT EXISTS (
     SELECT 1
     FROM articulos_tiene_reportes atr
-    WHERE atr.articulos_id = a.id)`;
-/**el bloque de select atr.reportes podria desaparecer? */
+    INNER JOIN reportes r ON r.id = atr.reportes_id
+    WHERE atr.articulos_id = a.id AND r.estado = 'pendiente')`;
 
 const getAll = async () => {
   try {
