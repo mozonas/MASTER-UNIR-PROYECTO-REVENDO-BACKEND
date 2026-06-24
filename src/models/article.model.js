@@ -22,7 +22,7 @@ const articleInfo = `
       ORDER BY f.id ASC
       LIMIT 1
     ) AS foto,
-    (
+    ( 
       SELECT atr.reportes_id
       FROM articulos_tiene_reportes atr
       WHERE atr.articulos_id = a.id
@@ -30,7 +30,12 @@ const articleInfo = `
     ) AS estado_reporte
   FROM articulos a
   LEFT JOIN categorias c ON a.categorias_id = c.id
-  WHERE a.estadoVenta <> 'BORRADO'`;
+  WHERE a.estadoVenta IN ('DISPONIBLE','RESERVADO')
+    AND NOT EXISTS (
+    SELECT 1
+    FROM articulos_tiene_reportes atr
+    WHERE atr.articulos_id = a.id)`;
+/**el bloque de select atr.reportes podria desaparecer? */
 
 const getAll = async () => {
   try {
