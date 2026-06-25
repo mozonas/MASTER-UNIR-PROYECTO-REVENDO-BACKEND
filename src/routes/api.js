@@ -20,7 +20,7 @@ router.use ('/transactions', require ('./api/transactions'))
 router.use ('/activity', require ('./api/activity'))
 // router.use('/moderation', require('./api/moderation'));
 
-//router.use('/messages', require('./api/messages'));
+router.use('/messages', require('./api/messages'));
 
 
 //mog 210626 -> filtersHomeV3
