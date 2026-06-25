@@ -1,4 +1,4 @@
-const  {
+const {
   getAll,
   getArticle,
   getArticleFotos,
@@ -7,13 +7,10 @@ const  {
   createArticle,
   updateArticle,
   deleteArticle,
-  selectByThisMonth, 
-  selectByLastMonth
 } = require("../models/article.model");
 
 const UserModel = require("../models/users.model");
 const CategoryModel = require("../models/categories.model");
-const ArticleModel = require ('../models/article.model')
 
 const getAllUserArticles = async (req, res) => {
   const userId = req.params.userId;
@@ -77,10 +74,25 @@ const getEnums = async (req, res) => {
 
 const createArticleHandler = async (req, res) => {
   try {
-    const userId = req.params.userId ?? req.body.usuarios_id;
-    const firstImage = Array.isArray(req.body.images)
-      ? (req.body.images[0] ?? "")
-      : (req.body.image1 ?? req.body.image ?? "");
+    const userId = Number(req.user?.userId);
+
+    if (!userId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+          .filter((file) => file && typeof file.filename === 'string')
+          .map((file) => `uploads/${file.filename}`)
+      : [];
+
+    const firstImage = uploadedImages[0]
+      ?? (Array.isArray(req.body.images)
+        ? (req.body.images[0] ?? "")
+        : (req.body.image1 ?? req.body.image ?? ""));
 
     if (!String(firstImage).trim()) {
       return res.status(400).json({
@@ -91,6 +103,7 @@ const createArticleHandler = async (req, res) => {
 
     const payload = {
       ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
       usuarios_id: userId,
     };
     const newArticleId = await createArticle(payload);
@@ -112,17 +125,36 @@ const createArticleHandler = async (req, res) => {
 const editArticle = async (req, res) => {
   try {
     const articleId = req.params.articleId;
-    const updatedData = req.body;
-    const result = await updateArticle(articleId, updatedData);
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+          .filter((file) => file && typeof file.filename === 'string')
+          .map((file) => `uploads/${file.filename}`)
+      : [];
+    const updatedData = {
+      ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
+    };
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const result = await updateArticle(articleId, requesterUserId, updatedData, canEditAny);
     if (result) {
       return res.status(200).json({
         status: "success",
         message: "Artículo actualizado correctamente",
       });
     } else {
-      return res.status(404).json({
+      return res.status(403).json({
         status: "error",
-        message: "Artículo no encontrado",
+        message: "No autorizado para modificar este artículo",
       });
     }
   } catch (error) {
@@ -135,23 +167,52 @@ const editArticle = async (req, res) => {
 };
 
 const eraseArticle = async (req, res) => {
-  const articleId = req.params.articleId;
-  const result = await deleteArticle(articleId);
-  if (result) {
-    return res.status(200).json({
-      status: "success",
-      message: "Artículo eliminado correctamente",
-    });
-  } else {
-    return res.status(404).json({
+  try {
+    const articleId = req.params.articleId;
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canDeleteAny = requesterRole === 'MODERADOR' || requesterRole === 'ADMIN';
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const result = await deleteArticle(articleId, requesterUserId, canDeleteAny);
+    if (result) {
+      return res.status(200).json({
+        status: "success",
+        message: "Artículo eliminado correctamente",
+      });
+    } else {
+      return res.status(403).json({
+        status: "error",
+        message: "No autorizado para eliminar este artículo",
+      });
+    }
+  } catch (error) {
+    console.error("Error al eliminar el artículo:", error);
+    return res.status(500).json({
       status: "error",
-      message: "Artículo no encontrado",
+      message: "Error al eliminar el artículo",
     });
   }
 };
 
 const getById = async (req, res) => {
   try {
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
     const { id } = req.params;
     const responseArticle = await getArticle(id);
     if (responseArticle === undefined) {
@@ -162,6 +223,14 @@ const getById = async (req, res) => {
         data: responseArticle
       });
     }
+
+    if (!canEditAny && Number(responseArticle.usuarios_id) !== requesterUserId) {
+      return res.status(403).json({
+        status: "error",
+        message: "No autorizado para editar este artículo",
+      });
+    }
+
     const responseFotos = await getArticleFotos(id);
     const responseArticleSeller = responseArticle?.usuarios_id
       ? await UserModel.getById(responseArticle.usuarios_id)
@@ -187,6 +256,7 @@ const getById = async (req, res) => {
 
 //mog 18062026 -> buscador de artículos//cargador de artículos desde la home
 //mog 18062026 -> buscador de artículos / cargador de artículos desde la home
+const ArticleModel = require("../models/article.model");
 
 const searchArticles = async (req, res) => {
   console.log("🟢 Entrando en searchArticles con filtros:", req.query);
