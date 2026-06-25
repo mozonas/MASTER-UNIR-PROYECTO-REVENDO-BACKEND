@@ -25,12 +25,18 @@ const articleInfo = `
     (
       SELECT atr.reportes_id
       FROM articulos_tiene_reportes atr
-      WHERE atr.articulos_id = a.id
+      INNER JOIN reportes r ON r.id = atr.reportes_id
+      WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
   LEFT JOIN categorias c ON a.categorias_id = c.id
-  WHERE a.estadoVenta <> 'BORRADO'`;
+  WHERE a.estadoVenta = 'DISPONIBLE'
+    AND NOT EXISTS (
+    SELECT 1
+    FROM articulos_tiene_reportes atr
+    INNER JOIN reportes r ON r.id = atr.reportes_id
+    WHERE atr.articulos_id = a.id AND r.estado = 'pendiente')`;
 
 const getAll = async () => {
   try {
@@ -541,7 +547,6 @@ const selectSoldByYear = async (year) =>{
 //**PUBLICADOS COMPARATIVA PARA METRIC */
 //Obtener articulos publicados por mes
 const selectByThisMonth = async ()=>{
-    // seleccionar articulos publicados mes actual 
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
@@ -552,15 +557,13 @@ const selectByThisMonth = async ()=>{
 }
 // Articulos publicados el mes pasado
 const selectByLastMonth = async ()=>{
-    const now = new Date();
-    const primerDia = new Date(now.getFullYear(), now.getMonth()-1,1);
-    const ultimoDia= new Date (now.getFullYear(), now.getMonth(),0)
-
+  
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
-            WHERE created_at BETWEEN ? AND ?`,
-        [primerDia,ultimoDia])
+        WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+          AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
+    `);
         return result[0];
 }
 //**ARTICULOS CREADOS */
