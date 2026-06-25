@@ -30,9 +30,16 @@ const userSchema = yup.object({
             .max(30, 'El nombre de usuario no puede exceder los 30 caracteres')
             .matches(/^[a-zA-Z0-9_.]+$/, 'El usuario solo puede contener letras, números, puntos y guiones bajos'),
 
+        password: yup.string()
+            .min(4, 'La contraseña debe tener al menos 4 caracteres')
+            .max(100, 'La contraseña es demasiado larga')
+            .optional()                 // Hace que en el 'edit' no sea obligatoria
+            .nullable()                 // Permite valores nulos
+            .transform((value) => (value === '' ? null : value)), // Si viene un string vacío '', lo convierte a null
+
         foto: yup.string()
             .trim()
-            .nullable() // Permite que sea null si el usuario no sube foto
+            .nullable()
             .url('La foto debe ser una URL válida o el nombre de un archivo'),
 
         perfil: yup.string()
@@ -40,8 +47,14 @@ const userSchema = yup.object({
             .default('USUARIO'),
 
         fecha_nacimiento: yup.date()
-            .nullable() // Permite que venga vacío
-            .typeError('La fecha de nacimiento debe ser una fecha válida')
+            .nullable()
+            .typeError('La fecha de nacimiento debe ser una fecha válida'),
+
+        direccion: yup.string()
+            .trim()
+            .nullable()
+            .max(500, 'La dirección no puede exceder los 500 caracteres')
+            .default('')
     })
 });
 

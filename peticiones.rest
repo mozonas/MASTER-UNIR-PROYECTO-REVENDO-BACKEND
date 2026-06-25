@@ -45,3 +45,67 @@ Content-Type: application/json
   "email": "usuario@correo.com",
   "password": "123456"
 }
+
+### TRANSACCIONES
+GET http://localhost:3000/api/transactions/anual/2026
+Content-Type: application/json
+
+### ARTICULOS publicados
+GET http://localhost:3000/api/article/published/this-month
+Content-Type: application/json
+
+###
+GET http://localhost:3000/api/article/published/last-month
+Content-Type: application/json
+
+
+### ACTIVIDAD MENSUAL###
+
+###
+GET http://localhost:3000/api/activity/monthly
+
+###
+GET http://localhost:3000/api/reports/badges-counters
+#################
+####ARTÍCULOS####
+#################
+
+### Obtener un articulo por su ID
+GET http://localhost:3000/api/article/25
+
+### Obtener todos los artículos disponibles
+GET http://localhost:3000/api/article/search
+
+### Buscar por texto: samsung
+GET http://localhost:3000/api/article/search?texto=samsung
+
+### Buscar por texto: sofa
+GET http://localhost:3000/api/article/search?texto=sofa
+
+
+###filtrosv3
+### Filtros básicos sin parámetros
+GET http://localhost:3000/api/filters/search
+
+### Buscar por texto
+GET http://localhost:3000/api/filters/search?texto=macBook
+
+### Buscar por categoría
+GET http://localhost:3000/api/filters/search?categoria=2
+
+### Buscar por estado del producto
+GET http://localhost:3000/api/filters/search?estado=Sin usar
+
+
+### Buscar por rango de precio
+GET http://localhost:3000/api/filters/search?min=10&max=50
+
+### Ordenar por precio ascendente
+GET http://localhost:3000/api/filters/search?orden=precio_asc
+
+### Ordenar por precio descendente
+GET http://localhost:3000/api/filters/search?orden=precio_desc
+
+
+
+

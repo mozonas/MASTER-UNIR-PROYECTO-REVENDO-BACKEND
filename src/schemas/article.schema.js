@@ -1,23 +1,16 @@
-/* 
-1. Imprortar la libreria de validaciones
-2. Definir las reglas de validación para cada campo del articulo
-(titulo, descripcion, precio, estadoVenta, estadoProducto, ubicación, tipoEntrega, tipoPago)
-3. Exportar el esquema de validación para ser utilizado en las rutas
-*/
+const yup = require('yup');
 
-// 1. Imprortar la libreria de validaciones
-const Joi = require('joi');
-
-// 2. Definir las reglas de validación para cada campo del articulo
-const articleSchema = Joi.object({
-    titulo: Joi.string().max(100).required(),
-    ubicación: Joi.string().max(100).required(), // Confirmar que el campo se llama ubicación
-    descripcion: Joi.string().required(),
-    precio: Joi.number().positive().required(),
-    usuarios_id: Joi.number().integer().positive().required(),
-    categorias_id: Joi.number().integer().positive().required(),
+const articleSchema = yup.object({
+    body: yup.object({
+        id: yup.string().required(),
+        titulo: yup.string().required(),
+        descripcion: yup.string().max(200),
+        precio: yup.number().positive().required(),
+        estadoVenta: yup.string().oneOf(['DISPONIBLE', 'VENDIDO', 'RESERVADO']).required(),
+        createdAt: yup.date().required(),
+    })
 });
 
-
-// 3. Exportar el esquema de validación para ser utilizado en las rutas
-module.exports = articleSchema;
+module.exports = {
+    articleSchema
+};
