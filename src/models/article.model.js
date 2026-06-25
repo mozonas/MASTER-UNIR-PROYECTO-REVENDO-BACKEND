@@ -30,7 +30,7 @@ const articleInfo = `
     ) AS estado_reporte
   FROM articulos a
   LEFT JOIN categorias c ON a.categorias_id = c.id
-  WHERE a.estadoVenta IN ('DISPONIBLE','RESERVADO')
+  WHERE a.estadoVenta = 'DISPONIBLE'
     AND NOT EXISTS (
     SELECT 1
     FROM articulos_tiene_reportes atr
