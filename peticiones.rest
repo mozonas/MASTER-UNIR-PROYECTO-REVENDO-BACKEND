@@ -46,26 +46,10 @@ Content-Type: application/json
   "password": "123456"
 }
 
-### TRANSACCIONES
+###
 GET http://localhost:3000/api/transactions/anual/2026
 Content-Type: application/json
 
-### ARTICULOS publicados
-GET http://localhost:3000/api/article/published/this-month
-Content-Type: application/json
-
-###
-GET http://localhost:3000/api/article/published/last-month
-Content-Type: application/json
-
-
-### ACTIVIDAD MENSUAL###
-
-###
-GET http://localhost:3000/api/activity/monthly
-
-###
-GET http://localhost:3000/api/reports/badges-counters
 #################
 ####ARTÍCULOS####
 #################
@@ -107,5 +91,5 @@ GET http://localhost:3000/api/filters/search?orden=precio_asc
 GET http://localhost:3000/api/filters/search?orden=precio_desc
 
 
-
-
+###
+http://localhost:3000/api/reports/types

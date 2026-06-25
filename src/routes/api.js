@@ -16,12 +16,11 @@ router.use('/userarticles', require('./api/userarticles'));
 router.use('/admin', require('./api/admin'));
 
 router.use('/article', require('./api/article'));
-router.use ('/transactions', require ('./api/transactions'))
-router.use ('/activity', require ('./api/activity'))
 // router.use('/moderation', require('./api/moderation'));
 
-//router.use('/messages', require('./api/messages'));
+router.use('/messages', require('./api/messages'));
 
+router.use ('/transactions', require ('./api/transactions'))
 
 //mog 210626 -> filtersHomeV3
 router.use ('/filters',require('./api/filters'))
