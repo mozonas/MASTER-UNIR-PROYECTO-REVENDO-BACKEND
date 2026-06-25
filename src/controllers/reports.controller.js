@@ -29,13 +29,13 @@ const ReportsController = {
     reportArticle: async (req, res) => {
         try {
             const articuloId = parseInt(req.params.articleId);
-            const { motivo, usuarioId } = req.body;
+            const { motivo, reportType, usuarioId } = req.body;
 
-            if (!motivo || !usuarioId) {
-                return res.status(400).json({ error: 'Motivo y usuarioId son requeridos' });
+            if (!motivo || !reportType || !usuarioId) {
+                return res.status(400).json({ error: 'Motivo, tipo y usuarioId son requeridos' });
             }
 
-            const reporteId = await Report.createReport(articuloId, motivo, usuarioId);
+            const reporteId = await Report.createReport(articuloId, motivo, reportType, usuarioId);
             res.status(201).json({ message: 'Artículo reportado y puesto en revisión', reporteId });
         } catch (error) {
             console.error('Error al reportar el artículo:', error);

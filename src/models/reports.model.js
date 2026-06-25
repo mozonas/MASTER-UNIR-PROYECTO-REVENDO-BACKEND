@@ -36,15 +36,16 @@ const Report = {
     }
   },
 
-  createReport: async (articuloId, motivo, usuarioId) => {
+  createReport: async (articuloId, motivo, reportType, usuarioId) => {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
 
       const [reportResult] = await conn.query(
-        `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
-        [motivo],
+        `INSERT INTO reportes (motivo, id_tipo_reporte, estado, fecha) VALUES (?,?, 'pendiente', NOW())`,
+        [motivo, reportType],
       );
+      
       const reporteId = reportResult.insertId;
 
       const [userCheck] = await conn.query(
