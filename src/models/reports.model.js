@@ -274,9 +274,7 @@ const getMonthlyReports = async () => {
 
 const getReportTypes = async () => {
   const [result] = await db.query(`
-        SELECT DISTINCT tipo
-            FROM reportes
-            WHERE tipo IS NOT NULL;
+        SELECT * FROM tipo_reporte ORDER BY tipo ASC;
     `);
   return result;
 };
