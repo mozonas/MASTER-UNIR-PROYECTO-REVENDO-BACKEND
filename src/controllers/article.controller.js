@@ -83,9 +83,16 @@ const createArticleHandler = async (req, res) => {
       });
     }
 
-    const firstImage = Array.isArray(req.body.images)
-      ? (req.body.images[0] ?? "")
-      : (req.body.image1 ?? req.body.image ?? "");
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+          .filter((file) => file && typeof file.filename === 'string')
+          .map((file) => `uploads/${file.filename}`)
+      : [];
+
+    const firstImage = uploadedImages[0]
+      ?? (Array.isArray(req.body.images)
+        ? (req.body.images[0] ?? "")
+        : (req.body.image1 ?? req.body.image ?? ""));
 
     if (!String(firstImage).trim()) {
       return res.status(400).json({
@@ -96,6 +103,7 @@ const createArticleHandler = async (req, res) => {
 
     const payload = {
       ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
       usuarios_id: userId,
     };
     const newArticleId = await createArticle(payload);
@@ -117,7 +125,15 @@ const createArticleHandler = async (req, res) => {
 const editArticle = async (req, res) => {
   try {
     const articleId = req.params.articleId;
-    const updatedData = req.body;
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+          .filter((file) => file && typeof file.filename === 'string')
+          .map((file) => `uploads/${file.filename}`)
+      : [];
+    const updatedData = {
+      ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
+    };
     const requesterUserId = Number(req.user?.userId);
     const requesterRole = String(req.user?.perfil || '').toUpperCase();
     const canEditAny = requesterRole === 'MODERADOR';

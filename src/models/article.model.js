@@ -228,8 +228,8 @@ const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny
         const altText = articlePayload.titulo || updatedData.titulo || "";
         for (const url of images) {
           await connection.query(
-            "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
-            [url, altText, articleId],
+            "INSERT INTO fotos (url, nombreAlt, articulos_id, usuarios_id) VALUES (?, ?, ?, ?)",
+            [url, altText, articleId, requesterUserId],
           );
         }
       } else if (articlePayload.titulo) {
@@ -292,10 +292,10 @@ const createArticle = async (articleData) => {
     await connection.beginTransaction();
     const [result] = await connection.query("INSERT INTO articulos SET ?", [payload]);
 
-    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId]);
+    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId, articleData.usuarios_id]);
     for (const fotoRow of fotosRows) {
       await connection.query(
-        "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+        "INSERT INTO fotos (url, nombreAlt, articulos_id, usuarios_id) VALUES (?, ?, ?, ?)",
         fotoRow,
       );
     }
