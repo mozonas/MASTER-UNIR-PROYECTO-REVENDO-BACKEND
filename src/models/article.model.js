@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { selectByMonth } = require('./transactions.model');
 
 const articleInfo = `
   SELECT
@@ -24,18 +25,12 @@ const articleInfo = `
     (
       SELECT atr.reportes_id
       FROM articulos_tiene_reportes atr
-      INNER JOIN reportes r ON r.id = atr.reportes_id
-      WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
+      WHERE atr.articulos_id = a.id
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
   LEFT JOIN categorias c ON a.categorias_id = c.id
-  WHERE a.estadoVenta = 'DISPONIBLE'
-    AND NOT EXISTS (
-    SELECT 1
-    FROM articulos_tiene_reportes atr
-    INNER JOIN reportes r ON r.id = atr.reportes_id
-    WHERE atr.articulos_id = a.id AND r.estado = 'pendiente')`;
+  WHERE a.estadoVenta <> 'BORRADO'`;
 
 const getAll = async () => {
   try {
@@ -177,7 +172,7 @@ FROM fotos f
   }
 };
 
-const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny = false) => {
+const updateArticle = async (articleId, updatedData) => {
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
@@ -207,19 +202,10 @@ const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    let result;
-    if (canEditAny) {
-      [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
-        articlePayload,
-        articleId,
-      ]);
-    } else {
-      [result] = await connection.query("UPDATE articulos SET ? WHERE id = ? AND usuarios_id = ?", [
-        articlePayload,
-        articleId,
-        requesterUserId,
-      ]);
-    }
+    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
+      articlePayload,
+      articleId,
+    ]);
 
     if (result.affectedRows > 0) {
       if (images.length) {
@@ -228,8 +214,8 @@ const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny
         const altText = articlePayload.titulo || updatedData.titulo || "";
         for (const url of images) {
           await connection.query(
-            "INSERT INTO fotos (url, nombreAlt, articulos_id, usuarios_id) VALUES (?, ?, ?, ?)",
-            [url, altText, articleId, requesterUserId],
+            "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
+            [url, altText, articleId],
           );
         }
       } else if (articlePayload.titulo) {
@@ -292,10 +278,10 @@ const createArticle = async (articleData) => {
     await connection.beginTransaction();
     const [result] = await connection.query("INSERT INTO articulos SET ?", [payload]);
 
-    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId, articleData.usuarios_id]);
+    const fotosRows = images.map((url) => [url, articleData.titulo, result.insertId]);
     for (const fotoRow of fotosRows) {
       await connection.query(
-        "INSERT INTO fotos (url, nombreAlt, articulos_id, usuarios_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO fotos (url, nombreAlt, articulos_id) VALUES (?, ?, ?)",
         fotoRow,
       );
     }
@@ -311,21 +297,12 @@ const createArticle = async (articleData) => {
   }
 };
 
-const deleteArticle = async (articleId, requesterUserId, canDeleteAny = false) => {
+const deleteArticle = async (articleId) => {
   try {
-    let result;
-    if (canDeleteAny) {
-      [result] = await pool.query(
-        "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
-        [articleId],
-      );
-    } else {
-      [result] = await pool.query(
-        "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ? AND usuarios_id = ?",
-        [articleId, requesterUserId],
-      );
-    }
-
+    const [result] = await pool.query(
+      "UPDATE articulos SET estadoVenta = 'BORRADO' WHERE id = ?",
+      [articleId],
+    );
     return result.affectedRows > 0;
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);
@@ -642,5 +619,16 @@ module.exports = {
   getArticle,
   getArticleFotos,
   searchArticles,
-  searchWithFilters
+  searchWithFilters,
+  selectSold,
+  selectSoldThisMonth,
+  selectSoldByYear,
+  selectByThisMonth,
+  selectByLastMonth,
+  selectMonthly,
+  selectMonthlySold,
+  selectWeekly,
+  selectWeeklySold,
+  selectDaily,
+  selectDailySold
 };

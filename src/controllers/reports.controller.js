@@ -29,13 +29,13 @@ const ReportsController = {
     reportArticle: async (req, res) => {
         try {
             const articuloId = parseInt(req.params.articleId);
-            const { motivo, reportType, usuarioId } = req.body;
+            const { motivo, usuarioId } = req.body;
 
-            if (!motivo || !reportType || !usuarioId) {
-                return res.status(400).json({ error: 'Motivo, tipo y usuarioId son requeridos' });
+            if (!motivo || !usuarioId) {
+                return res.status(400).json({ error: 'Motivo y usuarioId son requeridos' });
             }
 
-            const reporteId = await Report.createReport(articuloId, motivo, reportType, usuarioId);
+            const reporteId = await Report.createReport(articuloId, motivo, usuarioId);
             res.status(201).json({ message: 'Artículo reportado y puesto en revisión', reporteId });
         } catch (error) {
             console.error('Error al reportar el artículo:', error);
@@ -113,21 +113,6 @@ const ReportsController = {
         } catch (error) {
             console.error('Error en controlador al obtener historial de chats:', error);
             res.status(500).json({ error: 'Error al obtener el historial de chats' });
-        }
-    },
-
-    /**
-     * 
-     * @param {*} req 
-     * @param {*} res 
-     */
-    getReportTypes: async (req, res) => {
-        try {
-            const rawTypes = await Report.getReportTypes();
-            res.json(rawTypes);
-        } catch (error) {
-            console.error('Error en controlador al obtener los tipos de reporte:', error);
-            res.status(500).json({ error: 'Error al obtener los tipos de reporte' });
         }
     }
 
