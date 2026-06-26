@@ -90,6 +90,5 @@ GET http://localhost:3000/api/filters/search?orden=precio_asc
 ### Ordenar por precio descendente
 GET http://localhost:3000/api/filters/search?orden=precio_desc
 
-
 ###
-http://localhost:3000/api/reports/types
+GET http://localhost:3000/api/reports/types

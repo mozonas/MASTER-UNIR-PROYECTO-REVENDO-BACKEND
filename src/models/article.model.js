@@ -482,10 +482,11 @@ const searchWithFilters = async (filters) => {
   return rows;
 };
 
+//260626 MOG INICIO RECUPERACION FUNCIONES ACTIVIDAD
 //**ARTICULOS VENDIDOS PARA ACTIVIDAD */
 const selectSold = async (rango) => {
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
       a.titulo,
       a.descripcion,
       a.created_at AS fecha,
@@ -500,21 +501,21 @@ const selectSold = async (rango) => {
   `);
   return result;
 };
-
+ 
 // 1. Vendidos HOY
-const selectDailySold = () => 
+const selectDailySold = () =>
   selectSold(`DATE(a.created_at) = CURDATE()`);
-
+ 
 // 2. Vendidos últimos 7 DÍAS
-const selectWeeklySold = () => 
+const selectWeeklySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
-
+ 
 // 3. Vendidos MES ACTUAL
-const selectMonthlySold = () => 
+const selectMonthlySold = () =>
   selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
-
+ 
 //**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
-// Obtener articulos vendidos al mes 
+// Obtener articulos vendidos al mes
 const selectSoldThisMonth = async (month, year)=>{
     const [result]= await pool.query (`
        SELECT day(created_at) AS dia, COUNT(*) AS total
@@ -551,7 +552,7 @@ const selectByThisMonth = async ()=>{
 }
 // Articulos publicados el mes pasado
 const selectByLastMonth = async ()=>{
-  
+ 
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
@@ -564,7 +565,7 @@ const selectByLastMonth = async ()=>{
 //**Obtener actividad diaria de articulos */
 const selectDaily = async ()=>{
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -579,7 +580,7 @@ const selectDaily = async ()=>{
 }
 const selectWeekly = async ()=>{
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -592,9 +593,9 @@ const selectWeekly = async ()=>{
     `);
     return result
 }
-const selectMonthly = async () =>{ 
+const selectMonthly = async () =>{
   const [result] = await pool.query(`
-  SELECT 
+  SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -609,7 +610,10 @@ const selectMonthly = async () =>{
 }
 
 
-module.exports = {
+//260626 FIN
+
+
+/* module.exports = {
   getAll,
   getUserArticles,
   getArticleEnums,
@@ -630,5 +634,44 @@ module.exports = {
   selectWeekly,
   selectWeeklySold,
   selectDaily,
+  selectDailySold,
+  selectMonthly,
+  selectWeekly,
+  selectDaily,
+  selectByLastMonth,
+  selectByThisMonth,
+  selectSoldByYear,
+  selectSoldThisMonth,  
+  selectMonthlySold,
+  selectWeeklySold,
+  selectDailySold,
+  selectSold
+};
+ */
+//mog 260626 -> comentado por conflictos del merge
+module.exports = {
+  getAll,
+  getUserArticles,
+  getArticleEnums,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  getArticle,
+  getArticleFotos,
+  searchArticles,
+  searchWithFilters,
+
+  // Estadísticas
+  selectSold,
+  selectSoldThisMonth,
+  selectSoldByYear,
+  selectByThisMonth,
+  selectByLastMonth,
+  selectMonthly,
+  selectMonthlySold,
+  selectWeekly,
+  selectWeeklySold,
+  selectDaily,
   selectDailySold
 };
+
