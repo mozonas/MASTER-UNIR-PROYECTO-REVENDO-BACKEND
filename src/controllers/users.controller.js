@@ -34,9 +34,11 @@ const getUsersStats = async (req, res) => {
       usuariosMesActual: current.total,
       usuariosMesAnterior: last.total,
     });
+    console.log('ENTRO AQUÍ MIGUEL');
 
   } catch (error) {
     console.error(error);
+    console.log('entramos en el error');
     res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
   }
 };
@@ -173,22 +175,31 @@ const getValoraciones = async (req, res) => {
     }
 }
 
-    const getUsuariosByRange = async (req, res) => {
-      try {
-    // 1. Captura el rango de la URL 
-    const { range } = req.params; 
+const getUsuariosByRange = async (req, res) => {
+    try {
+// 1. Captura el rango de la URL 
+const { range } = req.params; 
 
-    // 2. Llama al modelo pasando el rango
-    const usuarios = await usuariosModel.selectUsersByRange(range);
+// 2. Llama al modelo pasando el rango
+const usuarios = await usuariosModel.selectUsersByRange(range);
 
-    // 3. Responde al frontend con los datos 
-    return res.status(200).json(usuarios);
-      } catch (error) {
-    // Manejo de errores por si falla la base de datos
-    return res.status(500).json({ error: error.message });
-      }
-    };
+// 3. Responde al frontend con los datos 
+return res.status(200).json(usuarios);
+    } catch (error) {
+// Manejo de errores por si falla la base de datos
+return res.status(500).json({ error: error.message });
+    }
+};
 
 module.exports = {
-    getAll, getById, getUsersStats, create, edit, remove, register, getStatistics, getValoraciones, getUsuariosByRange
+    getAll, 
+    getById, 
+    getUsersStats, 
+    create, 
+    edit, 
+    remove, 
+    register, 
+    getStatistics, 
+    getValoraciones, 
+    getUsuariosByRange
 }

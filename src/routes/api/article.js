@@ -8,24 +8,38 @@
 
 const express = require("express");
 
-const {
+/* const {
   getAllArticles,
   getById,
   getEnums,
   searchArticles
-} = require("../../controllers/article.controller");
+} = require("../../controllers/article.controller"); */
 
+const articleController = require('../../controllers/article.controller');
 const router = express.Router();
 console.log("Router de articulos creado.");
 
 // 👉 SIEMPRE PRIMERO
-router.get("/enums", getEnums);
-router.get("/search", searchArticles);
+router.get("/enums", articleController.getEnums);
+router.get("/search", articleController.searchArticles);
 
 // 👉 LUEGO LAS RUTAS NORMALES
-router.get("/", getAllArticles);
+router.get("/", articleController.getAllArticles);
 
+
+
+
+//MG RUTAS AÑADIDAS PARA LAS GRÁFICAS DEL DASHBOARD
+// Ruta para extraer comparación de articulos publicados este mes con el anterior
+router.get ('/published/comparison', articleController.getPublishedComp);
+// Ruta para extraer articulos vendidos este mes
+router.get ('/sold/:month', articleController.getSoldThisMonth);
+// Ruta para extraer articulos vendidos este año
+router.get ('/sold/year/:year', articleController.getSoldByYear)
+ 
 // 👉 SIEMPRE AL FINAL
-router.get("/:id", getById);
+router.get("/:id", articleController.getById);
+
 
 module.exports = router;
+

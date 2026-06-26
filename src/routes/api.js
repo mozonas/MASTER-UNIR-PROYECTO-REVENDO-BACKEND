@@ -25,4 +25,8 @@ router.use ('/transactions', require ('./api/transactions'))
 //mog 210626 -> filtersHomeV3
 router.use ('/filters',require('./api/filters'))
 
+
+//mog 26062026 -> añadimos la ruta a activities
+router.use('/activity', require('./api/activity'));
+
 module.exports = router;
