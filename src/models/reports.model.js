@@ -222,8 +222,6 @@ const Report = {
   },
 };
 
-module.exports = Report;
-
 const getDailyReports = async () => {
   const [result] = await db.query(`
         SELECT 
@@ -240,6 +238,7 @@ const getDailyReports = async () => {
         `);
   return result;
 };
+
 const getWeeklyReports = async () => {
   const [result] = await db.query(`
         SELECT 
@@ -256,6 +255,7 @@ const getWeeklyReports = async () => {
     `);
   return result;
 };
+
 const getMonthlyReports = async () => {
   const [result] = await db.query(`
         SELECT 

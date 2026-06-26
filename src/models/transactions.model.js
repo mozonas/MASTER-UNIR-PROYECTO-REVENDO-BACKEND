@@ -14,27 +14,28 @@ const selectById = async (id)=> {
         return result [0];
 };
 
-
-//**Obtener actividad por usuario de un mes*/
-const selectByMonth = async () =>{
+//Obtener ventas diarias de un mes
+const selectByMonth = async (month, year) =>{
     const [result] = await db.query (`
-        SELECT COUNT(DISTINCT usuarios_id) AS total
+        SELECT day (fecha) AS dia, COUNT(*) AS total
         FROM transacciones
-        WHERE MONTH(fecha) = MONTH(CURRENT_DATE())
-        AND YEAR(fecha) = YEAR(CURRENT_DATE())`
-    );
-        return result[0];
+        WHERE MONTH (fecha) =? AND YEAR (fecha)=?
+        GROUP BY dia
+        ORDER BY dia ASC`, 
+        [month,year]);
+        return result;
 }
 
-//** Obtener actividad por usuario mes anterior */
-const selectByLastMonth = async ()=>{
+//** Obtener transacciones mensuales por año */
+const selectByYear = async (year)=>{
     const [result] = await db.query(`
-    SELECT COUNT(DISTINCT usuarios_id) AS total
+    SELECT MONTH (fecha) AS mes, COUNT(*) AS total
     FROM transacciones
-    WHERE MONTH(fecha) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
-    AND YEAR(fecha) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)`
-    );
-    return result[0];
+    WHERE YEAR (fecha)=?
+    GROUP BY mes
+    ORDER BY mes ASC`, 
+    [year]);
+    return result;
 }
 
 
@@ -73,7 +74,7 @@ module.exports ={
     selectAll,
     selectById,
     selectByMonth,
-    selectByLastMonth,
+    selectByYear,
     insert,
     updateById,
     deleteById
