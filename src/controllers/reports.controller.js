@@ -123,7 +123,10 @@ const ReportsController = {
      */
     getReportTypes: async (req, res) => {
         try {
-            const rawTypes = await Report.getReportTypes();
+            console.log(req.params.categoria);
+            const categoria = req.params.categoria;
+            
+            const rawTypes = await Report.getReportTypes(categoria);
             res.json(rawTypes);
         } catch (error) {
             console.error('Error en controlador al obtener los tipos de reporte:', error);
