@@ -267,6 +267,12 @@ const getMonthlyReports = async () => {
     return result
 }
 
+const getReportTypes = async () => {
+  const [result] = await db.query(`
+        SELECT * FROM tipo_reporte WHERE categoria='ARTÍCULO' ORDER BY tipo ASC;
+    `);
+  return result;
+};
 
-module.exports = { ...Report, getDailyReports, getMonthlyReports, getWeeklyReports};
+module.exports = { ...Report, getDailyReports, getMonthlyReports, getWeeklyReports, getReportTypes};
      
