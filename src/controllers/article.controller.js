@@ -206,12 +206,12 @@ const getById = async (req, res) => {
     const requesterUserId = Number(req.user?.userId);
     const requesterRole = String(req.user?.perfil || '').toUpperCase();
     const canEditAny = requesterRole === 'MODERADOR';
-    if (!requesterUserId) {
+   /*  if (!requesterUserId) {
       return res.status(401).json({
         status: "error",
         message: "Token inválido o sin usuario",
       });
-    }
+    } */
 
     const { id } = req.params;
     const responseArticle = await getArticle(id);
@@ -224,12 +224,12 @@ const getById = async (req, res) => {
       });
     }
 
-    if (!canEditAny && Number(responseArticle.usuarios_id) !== requesterUserId) {
+    /* if (!canEditAny && Number(responseArticle.usuarios_id) !== requesterUserId) {
       return res.status(403).json({
         status: "error",
         message: "No autorizado para editar este artículo",
       });
-    }
+    } */
 
     const responseFotos = await getArticleFotos(id);
     const responseArticleSeller = responseArticle?.usuarios_id

@@ -231,7 +231,7 @@ const getDailyReports = async () => {
           u.usuario
         FROM reportes r
         INNER JOIN articulos_tiene_reportes ar ON ar.reportes_id = r.id
-        INNER JOIN articulos a ON a.id = ar.articulos_id
+        INNERINNER articulos a ON a.id = ar.articulos_id
         INNER JOIN usuarios u ON u.id = a.usuarios_id
         WHERE DATE(r.fecha) = CURDATE()
         ORDER BY r.fecha DESC
