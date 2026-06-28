@@ -26,24 +26,24 @@ const getById = async (req, res) => {
 };
 
 // Obtener usuarios nuevos mensuales y mes anterior
-// const getUsersStats = async (req, res) => {
+const getUsersStats = async (req, res) => {
 
-//     console.log ('entramos en getUsersStats')
-//   try {
-//     const current = await UserModel.selectUsersCurrentMonth();
-//     const last = await UserModel.selectUsersLastMonth();
-//     res.json({
-//       usuariosMesActual: current.total,
-//       usuariosMesAnterior: last.total,
-//     });
-//     console.log('ENTRO AQUÍ MIGUEL');
+    console.log ('entramos en getUsersStats')
+  try {
+    const current = await UserModel.selectUsersCurrentMonth();
+    const last = await UserModel.selectUsersLastMonth();
+    res.json({
+      usuariosMesActual: current.total,
+      usuariosMesAnterior: last.total,
+    });
+    console.log('ENTRO AQUÍ MIGUEL');
 
-//   } catch (error) {
-//     console.error(error);
-//     console.log('entramos en el error');
-//     res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
-//   }
-// };
+  } catch (error) {
+    console.error(error);
+    console.log('entramos en el error');
+    res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+  }
+};
 
 const create = async (req, res) => {
     try {
@@ -157,25 +157,6 @@ const getStatistics = async (req, res) => {
     }
 }
 
-// const getUsersStats = async (req, res) => {
-
-//     console.log ('entramos en getUsersStats')
-//   try {
-//     const current = await UserModel.selectUsersCurrentMonth();
-//     const last = await UserModel.selectUsersLastMonth();
-//     res.json({
-//       usuariosMesActual: current.total,
-//       usuariosMesAnterior: last.total,
-//     });
-//     console.log('ENTRO AQUÍ MIGUEL');
-
-//   } catch (error) {
-//     console.error(error);
-//     console.log('entramos en el error');
-//     res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
-//   }
-// };
-
 const getValoraciones = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -215,6 +196,7 @@ return res.status(500).json({ error: error.message });
 module.exports = {
     getAll, 
     getById, 
+    getUsersStats, 
     create, 
     edit, 
     remove, 
