@@ -27,7 +27,7 @@ router.use('/messages', require('./api/messages'));
 router.use ('/filters',require('./api/filters'))
 
 
-//mog 26062026 -> añadimos la ruta a activities
-router.use('/activity', require('./api/activity'));
+//mog 26062026 -> añadimos la ruta a activities (Esta ruta ya existe arriba)
+// router.use('/activity', require('./api/activity'));
 
 module.exports = router;
