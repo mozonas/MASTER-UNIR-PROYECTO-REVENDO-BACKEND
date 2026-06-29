@@ -4,9 +4,18 @@ const { register} = require('../../controllers/users.controller');
 const { validateSchema } = require('../../middlewares/validations.middleware');
 const { userSchema } = require('../../schemas/users.schema');
 
+//mog-290626 -fix foto formulario signup
+const upload = require('../../middlewares/multer.middleware');
+
+
 // Rutas de /api/Users
 
-router.post('/', validateSchema(userSchema), register);
+router.post(
+    '/',
+    upload.single('foto'),
+    validateSchema(userSchema),
+    register
+);
 
 
 module.exports = router;

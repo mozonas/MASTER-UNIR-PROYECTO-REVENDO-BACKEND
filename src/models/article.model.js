@@ -121,31 +121,57 @@ const getUserArticles = async (userId) => {
 /**
  *
  */
+// const getArticle = async (id) => {
+//   try {
+//     const [rows] = await pool.query(
+//       `SELECT 
+// a.*,
+// c.nombre AS categoria,
+// COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
+// COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
+// COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
+// COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
+// COALESCE(d.pais, '') AS pais_direccion_vendedor
+// FROM articulos a 
+// INNER JOIN categorias c
+//     ON a.categorias_id = c.id 
+// INNER JOIN usuarios u
+//     ON u.id = a.usuarios_id 
+// LEFT JOIN direcciones d
+//     ON d.usuario_id = u.id 
+//  where a.id = ?`,
+//       [id],
+//     );
+//     console.log("Artículo obtenido:", rows[0]);
+//     if (rows[0] === undefined) {
+//       console.error("Artículo no encontrado");
+//       //throw new Error("Artículo no encontrado");
+//     }
+//     return rows[0];
+//   } catch (error) {
+//     console.error("Error al obtener el artículo:", error);
+//     throw error;
+//   }
+// };
+
 const getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
-a.*,
-c.nombre AS categoria,
-COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
-COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
-COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
-COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
-COALESCE(d.pais, '') AS pais_direccion_vendedor
-FROM articulos a 
-INNER JOIN categorias c
-    ON a.categorias_id = c.id 
-INNER JOIN usuarios u
-    ON u.id = a.usuarios_id 
-LEFT JOIN direcciones d
-    ON d.usuario_id = u.id 
- where a.id = ?`,
+        a.*,
+        c.nombre AS categoria,
+        u.direccion AS direccion
+      FROM articulos a 
+      INNER JOIN categorias c
+          ON a.categorias_id = c.id 
+      INNER JOIN usuarios u
+          ON u.id = a.usuarios_id 
+      WHERE a.id = ?`,
       [id],
     );
     console.log("Artículo obtenido:", rows[0]);
     if (rows[0] === undefined) {
       console.error("Artículo no encontrado");
-      //throw new Error("Artículo no encontrado");
     }
     return rows[0];
   } catch (error) {
@@ -313,6 +339,39 @@ const deleteArticle = async (articleId) => {
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);
     throw error;
+  }
+};
+
+// Marcado manual del artículo como vendido por su propio propietario:
+// actualiza el artículo (estado + método de pago real) y registra la transacción, de forma atómica
+const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio }) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [updateResult] = await connection.query(
+      "UPDATE articulos SET estadoVenta = 'VENDIDO', tipoPago = ? WHERE id = ? AND estadoVenta = 'DISPONIBLE'",
+      [tipoPago, articleId],
+    );
+
+    if (updateResult.affectedRows === 0) {
+      await connection.rollback();
+      return { error: 'NOT_AVAILABLE' };
+    }
+
+    const [insertResult] = await connection.query(
+      "INSERT INTO transacciones (fecha, usuarios_id, articulos_id, precio) VALUES (NOW(), ?, ?, ?)",
+      [vendedorId, articleId, precio],
+    );
+
+    await connection.commit();
+    return { transaccionId: insertResult.insertId };
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al marcar el artículo como vendido:", error);
+    throw error;
+  } finally {
+    connection.release();
   }
 };
 
@@ -662,6 +721,7 @@ module.exports = {
   createArticle,
   updateArticle,
   deleteArticle,
+  marcarArticuloVendido,
   getArticle,
   getArticleFotos,
   searchArticles,
