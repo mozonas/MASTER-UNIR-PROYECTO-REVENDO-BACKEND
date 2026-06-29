@@ -37,10 +37,8 @@ const userSchema = yup.object({
             .nullable()                 // Permite valores nulos
             .transform((value) => (value === '' ? null : value)), // Si viene un string vacío '', lo convierte a null
 
-        foto: yup.string()
-            .trim()
-            .nullable()
-            .url('La foto debe ser una URL válida o el nombre de un archivo'),
+        foto: yup.mixed().notRequired().nullable(),
+
 
         perfil: yup.string()
             .oneOf(['USUARIO', 'MODERADOR', 'ADMIN'], 'El perfil seleccionado no es válido')
