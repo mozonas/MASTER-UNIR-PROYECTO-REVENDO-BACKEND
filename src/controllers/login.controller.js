@@ -20,6 +20,14 @@ const login = async (req, res) => {
     if (!iguales) {
         return res.status(401).json({ message: 'Error email y/o contraseña' });
     }
+    
+    //mog 290626 bloqueo de usuario
+    // BLOQUEO
+    if (user.isBlocked === 1) {
+        return res.status(403).json({
+            message: 'Cuenta bloqueada y en investigación'
+        });
+    }
 
     const token = jwt.sign(
         {
@@ -30,6 +38,8 @@ const login = async (req, res) => {
         },
         process.env.JWT_SECRET_KEY
     );
+
+
 
     res.json({
         message: 'Login correcto',
