@@ -103,13 +103,24 @@ const Report = {
         }
     },
 
-    resolveReport: async (reporteId, accion) => {
+    resolveReport: async (reporteId, accion, moderadorId) => {
         const conn = await db.getConnection();
         try {
             const nuevoEstadoReporte = accion === 'aprobar' ? 'retirado' : 'activo';
             const nuevoEstadoArticulo = accion === 'aprobar' ? 'RETIRADO' : 'DISPONIBLE';
 
             await conn.beginTransaction();
+
+            const [articulos] = await conn.query(
+                `SELECT a.id AS articulo_id, a.titulo, a.usuarios_id AS propietario_id, r.motivo
+                 FROM articulos a
+                 INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
+                 INNER JOIN reportes r ON r.id = atr.reportes_id
+                 WHERE atr.reportes_id = ?
+                 LIMIT 1`,
+                [reporteId]
+            );
+            const articulo = articulos[0];
 
             await conn.query(
                 `UPDATE articulos a
@@ -123,6 +134,17 @@ const Report = {
                 `UPDATE reportes SET estado = ? WHERE id = ?`,
                 [nuevoEstadoReporte, reporteId]
             );
+
+            if (articulo && moderadorId) {
+                const contenido = accion === 'aprobar'
+                    ? `Tu artículo "${articulo.titulo}" ha sido retirado de la plataforma tras la revisión de un reporte. Motivo del reporte: ${articulo.motivo}.`
+                    : `Tu artículo "${articulo.titulo}" fue reportado, pero tras la revisión de un moderador se ha comprobado que cumple las normas y sigue disponible en la plataforma.`;
+
+                await conn.query(
+                    `INSERT INTO mensajes (titulo, contenido, fecha, usuarios_id, articulos_id) VALUES (?, ?, NOW(), ?, ?)`,
+                    ['Notificación de moderación', contenido, moderadorId, articulo.articulo_id]
+                );
+            }
 
             await conn.commit();
         } catch (error) {

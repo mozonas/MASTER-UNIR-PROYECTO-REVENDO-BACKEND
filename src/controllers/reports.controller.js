@@ -57,12 +57,17 @@ const ReportsController = {
         try {
             const reporteId = parseInt(req.params.reporteId);
             const { accion } = req.body;
+            const moderadorId = Number(req.user?.userId);
 
             if (!['aprobar', 'descartar'].includes(accion)) {
                 return res.status(400).json({ error: 'Acción debe ser "aprobar" o "descartar"' });
             }
 
-            await Report.resolveReport(reporteId, accion);
+            if (!moderadorId) {
+                return res.status(401).json({ error: 'Token inválido o sin usuario' });
+            }
+
+            await Report.resolveReport(reporteId, accion, moderadorId);
             res.json({ message: `Reporte ${accion === 'aprobar' ? 'aprobado: artículo retirado' : 'descartado: artículo restaurado'}` });
         } catch (error) {
             console.error('Error al resolver el reporte:', error);

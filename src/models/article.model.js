@@ -104,10 +104,17 @@ const getUserArticles = async (userId) => {
           WHERE f.articulos_id = a.id
           ORDER BY f.id ASC
           LIMIT 1
-        ) AS foto
+        ) AS foto,
+        (
+          SELECT atr.reportes_id
+          FROM articulos_tiene_reportes atr
+          INNER JOIN reportes r ON r.id = atr.reportes_id
+          WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
+          LIMIT 1
+        ) AS estado_reporte
       FROM articulos a
       LEFT JOIN categorias c ON a.categorias_id = c.id
-      WHERE a.usuarios_id = ? AND a.estadoVenta <> 'BORRADO'
+      WHERE a.usuarios_id = ? AND a.estadoVenta NOT IN ('BORRADO', 'RETIRADO')
       ORDER BY a.id DESC`,
       [userId],
     );
