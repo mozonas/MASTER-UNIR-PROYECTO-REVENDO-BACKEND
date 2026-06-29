@@ -115,31 +115,57 @@ const getUserArticles = async (userId) => {
 /**
  *
  */
+// const getArticle = async (id) => {
+//   try {
+//     const [rows] = await pool.query(
+//       `SELECT 
+// a.*,
+// c.nombre AS categoria,
+// COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
+// COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
+// COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
+// COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
+// COALESCE(d.pais, '') AS pais_direccion_vendedor
+// FROM articulos a 
+// INNER JOIN categorias c
+//     ON a.categorias_id = c.id 
+// INNER JOIN usuarios u
+//     ON u.id = a.usuarios_id 
+// LEFT JOIN direcciones d
+//     ON d.usuario_id = u.id 
+//  where a.id = ?`,
+//       [id],
+//     );
+//     console.log("Artículo obtenido:", rows[0]);
+//     if (rows[0] === undefined) {
+//       console.error("Artículo no encontrado");
+//       //throw new Error("Artículo no encontrado");
+//     }
+//     return rows[0];
+//   } catch (error) {
+//     console.error("Error al obtener el artículo:", error);
+//     throw error;
+//   }
+// };
+
 const getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
-a.*,
-c.nombre AS categoria,
-COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
-COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
-COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
-COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
-COALESCE(d.pais, '') AS pais_direccion_vendedor
-FROM articulos a 
-INNER JOIN categorias c
-    ON a.categorias_id = c.id 
-INNER JOIN usuarios u
-    ON u.id = a.usuarios_id 
-LEFT JOIN direcciones d
-    ON d.usuario_id = u.id 
- where a.id = ?`,
+        a.*,
+        c.nombre AS categoria,
+        u.direccion AS direccion
+      FROM articulos a 
+      INNER JOIN categorias c
+          ON a.categorias_id = c.id 
+      INNER JOIN usuarios u
+          ON u.id = a.usuarios_id 
+      WHERE a.id = ?`,
       [id],
     );
     console.log("Artículo obtenido:", rows[0]);
     if (rows[0] === undefined) {
       console.error("Artículo no encontrado");
-      //throw new Error("Artículo no encontrado");
     }
     return rows[0];
   } catch (error) {
