@@ -204,7 +204,7 @@ FROM fotos f
   }
 };
 
-const updateArticle = async (articleId, updatedData) => {
+const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny = false) => {
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
@@ -234,10 +234,13 @@ const updateArticle = async (articleId, updatedData) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
-      articlePayload,
-      articleId,
-    ]);
+    const [result] = await connection.query(
+      `UPDATE articulos
+       SET ?
+       WHERE id = ?
+         AND (? = 1 OR usuarios_id = ?)`,
+      [articlePayload, articleId, canEditAny ? 1 : 0, requesterUserId],
+    );
 
     if (result.affectedRows > 0) {
       if (images.length) {
