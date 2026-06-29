@@ -62,6 +62,32 @@ const getValoraciones = async (id) => {
     return rows;
 }
 
+const getTransaccionPendiente = async (vendedorId, compradorId) => {
+    const query = `
+        SELECT t.id AS transaccion_id, a.titulo AS articulo_titulo
+        FROM transacciones t
+        JOIN articulos a ON t.articulos_id = a.id
+        WHERE a.usuarios_id = ?       -- El dueño del producto es el vendedor
+          AND t.usuarios_id = ?       -- El que paga es el comprador
+          AND t.id NOT IN (SELECT transacciones_id FROM valoraciones) -- Que no esté valorada
+        ORDER BY t.fecha DESC
+        LIMIT 1;
+    `;
+    const [rows] = await db.query(query, [vendedorId, compradorId]);
+    return rows[0];
+};
+
+/**
+ * Inserta una nueva valoración asociada a una transacción real
+ */
+const insertValoracion = async (puntuacion, comentario, transaccionId) => {
+    const [result] = await db.query(
+        'INSERT INTO valoraciones (puntuacion, comentario, transacciones_id, fecha, created_at) VALUES (?, ?, ?, NOW(), NOW())',
+        [puntuacion, comentario, transaccionId]
+    );
+    return result;
+};
+
 //mog 110626 -> Función para contar total de usuarios (para paginación)
 const getAllPaginated = async (limit, offset) => {
     const [rows] = await db.query(
@@ -120,30 +146,30 @@ const getByEmail = async (email) => {
 
 /**Obtener usuarios creados mes actual */
 const selectUsersCurrentMonth = async () => {
-  const [result] = await db.query(`
+    const [result] = await db.query(`
     SELECT COUNT(*) AS total
     FROM usuarios
     WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
       AND YEAR(created_at) = YEAR(CURRENT_DATE())
   `);
-  return result[0];
+    return result[0];
 };
 
 /**Obtener usuarios creados mes anterior */
 const selectUsersLastMonth = async () => {
-  const [result] = await db.query(`
+    const [result] = await db.query(`
     SELECT COUNT(*) AS total
     FROM usuarios
     WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
       AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
   `);
-  return result[0];
+    return result[0];
 };
 
 //** Seleccionar usuario nuevo por rango fecha 
 
 const selectUsersByRange = async (rango) => {
-  const [result] = await db.query(`
+    const [result] = await db.query(`
     SELECT usuario,
            created_at AS fecha,
            isBlocked
@@ -151,7 +177,7 @@ const selectUsersByRange = async (rango) => {
     WHERE ${rango}
     ORDER BY created_at DESC
   `);
-  return result; // Devuelve un array de filas para el .map() de la actividad
+    return result; // Devuelve un array de filas para el .map() de la actividad
 };
 //definicion de los rangos daily, weekly y monthly
 const selectDailyUsers = () => selectUsersByRange(`DATE(created_at) = CURDATE()`);
@@ -159,23 +185,25 @@ const selectWeeklyUsers = () => selectUsersByRange(`created_at >= CURDATE() - IN
 const selectMonthlyUsers = () => selectUsersByRange(`MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())`);
 
 
-module.exports = { 
-    getAll, 
-    getById, 
-    insert, 
-    selectByEmail, 
-    selectUsersCurrentMonth, 
+module.exports = {
+    getAll,
+    getById,
+    insert,
+    getTransaccionPendiente,
+    insertValoracion,
+    selectByEmail,
+    selectUsersCurrentMonth,
     selectUsersLastMonth,
     selectUsersByRange,
     selectDailyUsers,
-    selectWeeklyUsers, 
+    selectWeeklyUsers,
     selectMonthlyUsers,
-    getStats, 
+    getStats,
     getValoraciones,
     getAllPaginated,
     countAll,
     deleteUser,
     toggleBlock,
     getByUsername,
-    getByEmail 
- };
+    getByEmail
+};

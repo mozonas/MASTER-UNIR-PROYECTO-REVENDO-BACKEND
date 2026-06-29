@@ -28,21 +28,21 @@ const getById = async (req, res) => {
 // Obtener usuarios nuevos mensuales y mes anterior
 const getUsersStats = async (req, res) => {
 
-    console.log ('entramos en getUsersStats')
-  try {
-    const current = await UserModel.selectUsersCurrentMonth();
-    const last = await UserModel.selectUsersLastMonth();
-    res.json({
-      usuariosMesActual: current.total,
-      usuariosMesAnterior: last.total,
-    });
-    console.log('ENTRO AQUÍ MIGUEL');
+    console.log('entramos en getUsersStats')
+    try {
+        const current = await UserModel.selectUsersCurrentMonth();
+        const last = await UserModel.selectUsersLastMonth();
+        res.json({
+            usuariosMesActual: current.total,
+            usuariosMesAnterior: last.total,
+        });
+        console.log('ENTRO AQUÍ MIGUEL');
 
-  } catch (error) {
-    console.error(error);
-    console.log('entramos en el error');
-    res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
-  }
+    } catch (error) {
+        console.error(error);
+        console.log('entramos en el error');
+        res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+    }
 };
 
 const create = async (req, res) => {
@@ -177,31 +177,76 @@ const getValoraciones = async (req, res) => {
     }
 }
 
+const getPendienteValorar = async (req, res) => {
+    try {
+        const { vendedorId, compradorId } = req.query;
+        if (!vendedorId || !compradorId) {
+            return res.status(400).json({ message: 'Faltan parámetros requeridos.' });
+        }
+
+        const transaccion = await UserModel.getTransaccionPendiente(vendedorId, compradorId);
+        return res.json(transaccion || null);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al buscar transacción pendiente.' });
+    }
+};
+
+const createValoracion = async (req, res) => {
+    try {
+        const { puntuacion, comentario, transaccionId } = req.body;
+
+        // Validaciones básicas antes de tocar la base de datos
+        if (!puntuacion || !comentario || !transaccionId) {
+            return res.status(400).json({ message: 'Todos los campos (puntuacion, comentario, transaccionId) son obligatorios.' });
+        }
+
+        if (puntuacion < 1 || puntuacion > 5) {
+            return res.status(400).json({ message: 'La puntuación debe estar comprendida entre 1 y 5.' });
+        }
+
+        // Llamamos al modelo pasándole los parámetros limpios
+        const result = await UserModel.insertValoracion(puntuacion, comentario, transaccionId);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Valoración publicada correctamente',
+            valoracion_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error('Error en createValoracion controller:', error);
+        return res.status(500).json({ message: 'Error interno en el servidor al guardar la valoración.' });
+    }
+};
+
 const getUsuariosByRange = async (req, res) => {
     try {
-// 1. Captura el rango de la URL 
-const { range } = req.params; 
+        // 1. Captura el rango de la URL 
+        const { range } = req.params;
 
-// 2. Llama al modelo pasando el rango
-const usuarios = await usuariosModel.selectUsersByRange(range);
+        // 2. Llama al modelo pasando el rango
+        const usuarios = await usuariosModel.selectUsersByRange(range);
 
-// 3. Responde al frontend con los datos 
-return res.status(200).json(usuarios);
+        // 3. Responde al frontend con los datos 
+        return res.status(200).json(usuarios);
     } catch (error) {
-// Manejo de errores por si falla la base de datos
-return res.status(500).json({ error: error.message });
+        // Manejo de errores por si falla la base de datos
+        return res.status(500).json({ error: error.message });
     }
 };
 
 module.exports = {
-    getAll, 
-    getById, 
-    getUsersStats, 
-    create, 
-    edit, 
-    remove, 
-    register, 
-    getStatistics, 
-    getValoraciones, 
+    getAll,
+    getById,
+    getUsersStats,
+    getPendienteValorar,
+    createValoracion,
+    create,
+    edit,
+    remove,
+    register,
+    getStatistics,
+    getValoraciones,
     getUsuariosByRange
 }
