@@ -28,6 +28,9 @@ router.get('/:userId', articlesController.getAllUserArticles);
 // Editar artículo (con nuevas imágenes opcionales)
 router.put('/:articleId', upload.array('images', 5), articlesController.editArticle);
 
+// Marcar artículo propio como vendido
+router.put('/:articleId/vender', articlesController.marcarVendido);
+
 // Borrar artículo
 router.delete('/:articleId', articlesController.eraseArticle);
 
