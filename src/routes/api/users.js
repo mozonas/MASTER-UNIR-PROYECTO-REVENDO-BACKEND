@@ -5,14 +5,14 @@ const { checkUserId } = require('../../middlewares/users.middleware');
 const { validateSchema } = require('../../middlewares/validations.middleware');
 const { userSchema } = require('../../schemas/users.schema.js');
 
-const upload = require('../../middlewares/multer.middleware'); 
+const upload = require('../../middlewares/multer.middleware');
 
 // Rutas de /api/Users
-router.get('/', getAll);
 router.get('/stats/users', getUsersStats); 
+router.post('/', validateSchema(userSchema), create);
+router.get('/', getAll);
 router.get('/:userId', checkUserId, getById);
 // router.get('/:userEmail', checkUserId, getByEmail);
-router.post('/', validateSchema(userSchema), create);
 // router.put('/:userId', checkUserId, upload.single('foto'), edit); 
 // router.put('/:userId', upload.single('foto'), checkUserId, edit);
 // Si en el futuro validas el esquema en el PUT, el orden estricto debe ser:
