@@ -25,12 +25,18 @@ const articleInfo = `
     (
       SELECT atr.reportes_id
       FROM articulos_tiene_reportes atr
-      WHERE atr.articulos_id = a.id
+      INNER JOIN reportes r ON r.id = atr.reportes_id
+      WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
       LIMIT 1
     ) AS estado_reporte
   FROM articulos a
   LEFT JOIN categorias c ON a.categorias_id = c.id
-  WHERE a.estadoVenta <> 'BORRADO'`;
+  WHERE a.estadoVenta = 'DISPONIBLE'
+    AND NOT EXISTS (
+    SELECT 1
+    FROM articulos_tiene_reportes atr
+    INNER JOIN reportes r ON r.id = atr.reportes_id
+    WHERE atr.articulos_id = a.id AND r.estado = 'pendiente')`;
 
 const getAll = async () => {
   try {
