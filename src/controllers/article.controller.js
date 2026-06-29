@@ -7,6 +7,7 @@ const {
   createArticle,
   updateArticle,
   deleteArticle,
+  marcarArticuloVendido,
 } = require("../models/article.model");
 
 const UserModel = require("../models/users.model");
@@ -201,6 +202,79 @@ const eraseArticle = async (req, res) => {
   }
 };
 
+// Permite al propietario marcar manualmente su propio artículo como vendido,
+// indicando el método de pago real y el precio acordado
+const TIPOS_PAGO_VALIDOS = ['Efectivo', 'Tarjeta', 'Bizum'];
+
+const marcarVendido = async (req, res) => {
+  try {
+    const { articleId } = req.params;
+    const requesterUserId = Number(req.user?.userId);
+    const { tipoPago, precio } = req.body;
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    if (!TIPOS_PAGO_VALIDOS.includes(tipoPago)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Método de pago no válido",
+      });
+    }
+
+    const precioAcordado = Number(precio);
+    if (!precioAcordado || precioAcordado <= 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "El precio acordado debe ser un número positivo",
+      });
+    }
+
+    const articulo = await getArticle(articleId);
+    if (!articulo) {
+      return res.status(404).json({
+        status: "error",
+        message: "Artículo no encontrado",
+      });
+    }
+
+    if (Number(articulo.usuarios_id) !== requesterUserId) {
+      return res.status(403).json({
+        status: "error",
+        message: "No puedes marcar como vendido un artículo que no es tuyo",
+      });
+    }
+
+    const resultado = await marcarArticuloVendido(articleId, requesterUserId, {
+      tipoPago,
+      precio: precioAcordado,
+    });
+
+    if (resultado.error === 'NOT_AVAILABLE') {
+      return res.status(409).json({
+        status: "error",
+        message: "El artículo ya no está disponible",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Artículo marcado como vendido",
+      transaccionId: resultado.transaccionId,
+    });
+  } catch (error) {
+    console.error("Error al marcar el artículo como vendido:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al marcar el artículo como vendido",
+    });
+  }
+};
+
 const getById = async (req, res) => {
   try {
     const requesterUserId = Number(req.user?.userId);
@@ -382,6 +456,7 @@ module.exports = {
   createArticleHandler,
   editArticle,
   eraseArticle,
+  marcarVendido,
   searchArticles,
   getById,
   getAllUserArticles,
