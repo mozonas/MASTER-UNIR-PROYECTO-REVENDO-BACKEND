@@ -125,6 +125,13 @@ const register = async (req, res) => {
         // Body: username, email, password
         req.body.password = bcrypt.hashSync(req.body.password, 8);
 
+        //mog 290626 foto
+
+        if (req.file) {
+            req.body.foto = req.file.filename;   // <-- sin /uploads/
+        }
+
+
         const result = await UserModel.insert(req.body);
         res.json({
             message: 'Registro completo'
