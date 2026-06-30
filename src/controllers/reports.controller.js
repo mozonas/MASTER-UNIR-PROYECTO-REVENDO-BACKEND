@@ -137,8 +137,67 @@ const ReportsController = {
             console.error('Error en controlador al obtener los tipos de reporte:', error);
             res.status(500).json({ error: 'Error al obtener los tipos de reporte' });
         }
-    }
+    },
 
+    enviarNotificacionChat: async (req, res) => {
+        try {
+            const reporteId = parseInt(req.params.reporteId);
+            const { contenido, usuarios_id, articulos_id } = req.body;
+
+            if (!contenido || !usuarios_id || !articulos_id) {
+                return res.status(400).json({ error: 'Contenido, usuarios_id y articulos_id son requeridos' });
+            }
+
+            const NuevoMensaje = {
+                titulo: 'Notificación de Incidencia',
+                contenido,
+                fecha: new Date(),
+                usuarios_id,
+                articulos_id
+            };
+
+            const MessageModel = require('../models/messages.model');
+            await MessageModel.insert(NuevoMensaje);
+
+            res.status(201).json({ message: 'Notificación enviada correctamente' });
+        } catch (error) {
+            console.error('Error al enviar notificación:', error);
+            res.status(500).json({ error: 'Error al enviar la notificación' });
+        }
+    },
+
+    reportarUsuarioChat: async (req, res) => {
+        try {
+            const { motivo, usuarios_id, articulos_id } = req.body;
+
+            if (!motivo || !usuarios_id || !articulos_id) {
+                return res.status(400).json({ error: 'motivo, usuarios_id y articulos_id son requeridos' });
+            }
+
+            const reporteId = await Report.createReportUsuario(motivo, usuarios_id, articulos_id);
+            res.status(201).json({ message: 'Usuario reportado correctamente', reporteId });
+        } catch (error) {
+            console.error('Error al reportar usuario:', error);
+            res.status(500).json({ error: 'Error al reportar el usuario' });
+        }
+    },
+
+    resolveReportChat: async (req, res) => {
+        try {
+            const reporteId = parseInt(req.params.reporteId);
+            const { accion } = req.body;
+
+            if (!['archivar', 'bloquear'].includes(accion)) {
+                return res.status(400).json({ error: 'Acción debe ser "archivar" o "bloquear"' });
+            }
+
+            await Report.resolveReportChat(reporteId, accion);
+            res.json({ message: `Incidencia ${accion === 'archivar' ? 'archivada' : 'bloqueada'} correctamente` });
+        } catch (error) {
+            console.error('Error al resolver la incidencia de chat:', error);
+            res.status(500).json({ error: 'Error al resolver la incidencia' });
+        }
+    }
 
 };
 

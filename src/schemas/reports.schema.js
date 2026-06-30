@@ -15,6 +15,8 @@ const chatReportSchema = yup.object({
     motivo: yup.string().required(),
     created_at: yup.date().required(),
     usuario: yup.string().required(),
+    usuarios_id: yup.number().required().integer(),
+    articulos_id: yup.number().nullable().integer(),
 });
 
 

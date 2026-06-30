@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-//Implementación de las consultas necesarias para el modelo de mensages
+//Implementación de las consultas necesarias para el modelo de mensajes
 
 const getByArticulo = async (articulos_id) => {
     const [rows] = await db.query(
