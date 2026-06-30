@@ -80,6 +80,33 @@ const Report = {
     }
   },
 
+  createReportUsuario: async (motivo, usuarioId, articuloId) => {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const [reportResult] = await conn.query(
+        `INSERT INTO reportes (motivo, estado, fecha, articulos_id) VALUES (?, 'pendiente', NOW(), ?)`,
+        [motivo, articuloId],
+      );
+      const reporteId = reportResult.insertId;
+
+      await conn.query(
+        `INSERT INTO usuarios_tiene_reportes (usuarios_id, reportes_id) VALUES (?, ?)`,
+        [usuarioId, reporteId],
+      );
+
+      await conn.commit();
+      return reporteId;
+    } catch (error) {
+      await conn.rollback();
+      console.error("Error al crear reporte de usuario:", error);
+      throw error;
+    } finally {
+      conn.release();
+    }
+  },
+
   getArticlesInReview: async () => {
     try {
       const [rows] = await db.query(`
@@ -141,6 +168,28 @@ const Report = {
     }
   },
 
+  resolveReportChat: async (reporteId, accion) => {
+    const conn = await db.getConnection();
+    try {
+      const nuevoEstado = accion === "archivar" ? "activo" : "retirado";
+
+      await conn.beginTransaction();
+
+      await conn.query(`UPDATE reportes SET estado = ? WHERE id = ?`, [
+        nuevoEstado,
+        reporteId,
+      ]);
+
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      console.error("Error al resolver la incidencia de chat:", error);
+      throw error;
+    } finally {
+      conn.release();
+    }
+  },
+
   getPendingArticles: async () => {
     try {
       const [rows] = await db.query(`
@@ -190,7 +239,8 @@ const Report = {
   getPendingChats: async () => {
     try {
       const [rows] = await db.query(`
-                SELECT r.id, r.fecha, r.motivo, r.estado, r.created_at, u.usuario
+                SELECT r.id, r.fecha, r.motivo, r.estado, r.created_at, u.usuario,
+                u.id as usuarios_id, r.articulos_id
                 FROM reportes r
                 INNER JOIN usuarios_tiene_reportes utr ON r.id = utr.reportes_id
                 INNER JOIN usuarios u ON utr.usuarios_id = u.id
@@ -207,7 +257,8 @@ const Report = {
   getChatsHistory: async () => {
     try {
       const [rows] = await db.query(`
-                SELECT r.id, r.fecha, r.motivo, r.estado, r.created_at, u.usuario
+                SELECT r.id, r.fecha, r.motivo, r.estado, r.created_at, u.usuario,
+                u.id as usuarios_id, r.articulos_id
                 FROM reportes r
                 INNER JOIN usuarios_tiene_reportes utr ON r.id = utr.reportes_id
                 INNER JOIN usuarios u ON utr.usuarios_id = u.id

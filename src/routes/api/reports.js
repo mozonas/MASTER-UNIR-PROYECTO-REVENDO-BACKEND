@@ -19,6 +19,15 @@ router.get('/chats/history', reportsController.getChatsHistory);
 // Ruta para obtener el tipo de reporte
 router.get('/types', reportsController.getReportTypes);
 
+// Enviar notificación al usuario afectado por la incidencia
+router.post('/chats/notificar/:reporteId', reportsController.enviarNotificacionChat);
+
+// Ruta para reportar un usuario en el chat
+router.post('/chats/reportar-usuario', reportsController.reportarUsuarioChat);
+
+// Ruta para resolver un reporte de chat
+router.put('/chats/resolve/:reporteId', reportsController.resolveReportChat);
+
 
 // Exportar el router para usarlo en el archivo principal de rutas
 module.exports = router;
