@@ -1,82 +1,87 @@
-const db = require('../config/db');
-
+const db = require("../config/db");
 
 const Report = {
-    countPendingArticles: async () => {
-        try {
-            const [rows] = await db.query(`
+  countPendingArticles: async () => {
+    try {
+      const [rows] = await db.query(`
                 SELECT COUNT(*) AS total
                 FROM reportes r
                 INNER JOIN articulos_tiene_reportes atr ON r.id = atr.reportes_id
                 WHERE r.estado = 'pendiente'
             `);
-            const articlesRows = rows[0];
-            return articlesRows ? articlesRows.total : 0;
-        } catch (error) {
-            console.error('Error al contar reportes pendientes de artículos:', error);
-            throw error;
-        }
-    },
+      const articlesRows = rows[0];
+      return articlesRows ? articlesRows.total : 0;
+    } catch (error) {
+      console.error("Error al contar reportes pendientes de artículos:", error);
+      throw error;
+    }
+  },
 
-    countPendingChats: async () => {
-        try {
-            const [rows] = await db.query(`
+  countPendingChats: async () => {
+    try {
+      const [rows] = await db.query(`
                 SELECT COUNT(*) AS total
                 FROM reportes r
                 INNER JOIN usuarios_tiene_reportes mtr ON r.id = mtr.reportes_id
                 WHERE r.estado = 'pendiente'
             `);
-            const chatsRows = rows[0];
-            return chatsRows ? chatsRows.total : 0;
-        } catch (error) {
-            console.error('Error al contar reportes pendientes de mensajería:', error);
-            throw error;
-        }
-    },
+      const chatsRows = rows[0];
+      return chatsRows ? chatsRows.total : 0;
+    } catch (error) {
+      console.error(
+        "Error al contar reportes pendientes de mensajería:",
+        error,
+      );
+      throw error;
+    }
+  },
 
-    createReport: async (articuloId, motivo, usuarioId) => {
-        const conn = await db.getConnection();
-        try {
-            await conn.beginTransaction();
+  createReport: async (articuloId, motivo, idTipoReporte, usuarioId) => {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
 
-            const [reportResult] = await conn.query(
-                `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
-                [motivo]
-            );
-            const reporteId = reportResult.insertId;
+      const [reportResult] = await conn.query(
+        `INSERT INTO reportes (motivo, estado, fecha, id_tipo_reporte, articulos_id) VALUES (?, 'pendiente', NOW(), ?, ?)`,
+        [motivo, idTipoReporte || null, articuloId],
+      );
+      const reporteId = reportResult.insertId;
 
-            const [userCheck] = await conn.query(`SELECT id FROM usuarios WHERE id = ?`, [usuarioId]);
-            if (userCheck.length > 0) {
-                await conn.query(
-                    `INSERT INTO usuarios_tiene_reportes (usuarios_id, reportes_id) VALUES (?, ?)`,
-                    [usuarioId, reporteId]
-                );
-            }
+      const [userCheck] = await conn.query(
+        `SELECT id FROM usuarios WHERE id = ?`,
+        [usuarioId],
+      );
+      if (userCheck.length > 0) {
+        await conn.query(
+          `INSERT INTO usuarios_tiene_reportes (usuarios_id, reportes_id) VALUES (?, ?)`,
+          [usuarioId, reporteId],
+        );
+      }
 
-            await conn.query(
-                `INSERT INTO articulos_tiene_reportes (articulos_id, reportes_id) VALUES (?, ?)`,
-                [articuloId, reporteId]
-            );
+      await conn.query(
+        `INSERT INTO articulos_tiene_reportes (articulos_id, reportes_id) VALUES (?, ?)`,
+        [articuloId, reporteId],
+      );
 
-            await conn.query(
-                `UPDATE articulos SET estadoVenta = 'EN_REVISION' WHERE id = ?`,
-                [articuloId]
-            );
+      await conn.query(
+        `UPDATE articulos SET estadoVenta = 'EN_REVISION' WHERE id = ?`,
+        [articuloId],
+      );
 
-            await conn.commit();
-            return reporteId;
-        } catch (error) {
-            await conn.rollback();
-            console.error('Error al crear el reporte:', error);
-            throw error;
-        } finally {
-            conn.release();
-        }
-    },
+      await conn.commit();
+      return reporteId;
+    } catch (error) {
+      await conn.rollback();
+      console.error("Error al crear el reporte:", error);
+      throw error;
+    } finally {
+      conn.release();
+    }
+  },
 
-    getArticlesInReview: async () => {
-        try {
-            const [rows] = await db.query(`
+  getArticlesInReview: async () => {
+    try {
+      const [rows] = await db.query(`
                 SELECT
                     a.id,
                     a.titulo,
@@ -96,12 +101,12 @@ const Report = {
                 WHERE r.estado = 'pendiente'
                 ORDER BY r.created_at DESC
             `);
-            return rows;
-        } catch (error) {
-            console.error('Error al obtener artículos en revisión:', error);
-            throw error;
-        }
-    },
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener artículos en revisión:", error);
+      throw error;
+    }
+  },
 
     resolveReport: async (reporteId, accion, moderadorId) => {
         const conn = await db.getConnection();
@@ -112,10 +117,11 @@ const Report = {
             await conn.beginTransaction();
 
             const [articulos] = await conn.query(
-                `SELECT a.id AS articulo_id, a.titulo, a.usuarios_id AS propietario_id, r.motivo
+                `SELECT a.id AS articulo_id, a.titulo, a.usuarios_id AS propietario_id, t.tipo AS tipo_reporte
                  FROM articulos a
                  INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
                  INNER JOIN reportes r ON r.id = atr.reportes_id
+                 LEFT JOIN tipo_reporte t ON t.id = r.id_tipo_reporte
                  WHERE atr.reportes_id = ?
                  LIMIT 1`,
                 [reporteId]
@@ -136,8 +142,9 @@ const Report = {
             );
 
             if (articulo && moderadorId) {
+                const motivoReporte = articulo.tipo_reporte || 'sin motivo especificado';
                 const contenido = accion === 'aprobar'
-                    ? `Tu artículo "${articulo.titulo}" ha sido retirado de la plataforma tras la revisión de un reporte. Motivo del reporte: ${articulo.motivo}.`
+                    ? `Tu artículo "${articulo.titulo}" ha sido retirado de la plataforma tras la revisión de un reporte. Motivo del reporte: ${motivoReporte}.`
                     : `Tu artículo "${articulo.titulo}" fue reportado, pero tras la revisión de un moderador se ha comprobado que cumple las normas y sigue disponible en la plataforma.`;
 
                 await conn.query(
@@ -234,8 +241,7 @@ const Report = {
             console.error('Error relacional en getChatsHistory:', error);
             throw error;
         }
-    }
-
+    },
 };
 
 const getDailyReports = async () => {
@@ -286,9 +292,23 @@ const getMonthlyReports = async () => {
         WHERE MONTH(r.fecha) = MONTH(CURRENT_DATE())
         ORDER BY r.fecha DESC
     `);
-    return result
-}
+  return result;
+};
 
+const getReportTypes = async (categoria) => {
+  const [result] = await db.query(
+    `
+        SELECT id, tipo FROM tipo_reporte WHERE categoria='${categoria}' ORDER BY tipo ASC;`,
+  );
+  console.log([result]);
 
-module.exports = { ...Report, getDailyReports, getMonthlyReports, getWeeklyReports};
-     
+  return result;
+};
+
+module.exports = {
+  ...Report,
+  getDailyReports,
+  getMonthlyReports,
+  getWeeklyReports,
+  getReportTypes,
+};
