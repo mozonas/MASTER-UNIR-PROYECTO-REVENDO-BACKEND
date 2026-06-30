@@ -17,30 +17,27 @@ const getByArticulo = async (articulos_id) => {
 const getByUsuario = async (usuarios_id) => {
     const [rows] = await db.query(
         `SELECT a.id as articulos_id, a.titulo,
-         MAX(u.id) as otro_usuario_id, 
-         MAX(u.usuario) as usuario, 
-         MAX(u.foto) as foto,
-         (SELECT contenido FROM mensajes 
-          WHERE articulos_id = a.id 
-          ORDER BY created_at DESC LIMIT 1) as ultimo_mensaje,
-         (SELECT created_at FROM mensajes 
-          WHERE articulos_id = a.id 
-          ORDER BY created_at DESC LIMIT 1) as fecha_ultimo_mensaje
+         otro.id as otro_usuario_id, otro.usuario, otro.foto,
+         lm.contenido as ultimo_mensaje,
+         lm.created_at as fecha_ultimo_mensaje
          FROM articulos a
-         JOIN usuarios u ON 
-             u.id = CASE 
-                 WHEN a.usuarios_id = ? THEN (
-                     SELECT m2.usuarios_id FROM mensajes m2 
-                     WHERE m2.articulos_id = a.id 
-                     ORDER BY m2.created_at DESC LIMIT 1
-                 )
-                 ELSE a.usuarios_id 
-             END
-         WHERE a.usuarios_id = ? 
-            OR a.id IN (
-                SELECT DISTINCT articulos_id FROM mensajes WHERE usuarios_id = ?
-            )
-         GROUP BY a.id, a.titulo`,
+         JOIN (
+             SELECT m1.articulos_id, m1.contenido, m1.created_at
+             FROM mensajes m1
+             WHERE m1.id = (
+                 SELECT m2.id FROM mensajes m2
+                 WHERE m2.articulos_id = m1.articulos_id
+                 ORDER BY m2.created_at DESC, m2.id DESC LIMIT 1
+             )
+         ) lm ON lm.articulos_id = a.id
+         JOIN usuarios otro ON otro.id = COALESCE(
+             (SELECT m3.usuarios_id FROM mensajes m3
+              WHERE m3.articulos_id = a.id AND m3.usuarios_id <> ?
+              ORDER BY m3.created_at DESC, m3.id DESC LIMIT 1),
+             a.usuarios_id
+         )
+         WHERE a.id IN (SELECT DISTINCT articulos_id FROM mensajes WHERE usuarios_id = ?)
+            OR a.usuarios_id = ?`,
         [usuarios_id, usuarios_id, usuarios_id]
     );
     return rows;

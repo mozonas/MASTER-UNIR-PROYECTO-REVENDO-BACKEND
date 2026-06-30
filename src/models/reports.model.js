@@ -36,14 +36,14 @@ const Report = {
     }
   },
 
-  createReport: async (articuloId, motivo, usuarioId) => {
+  createReport: async (articuloId, motivo, idTipoReporte, usuarioId) => {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
 
       const [reportResult] = await conn.query(
-        `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
-        [motivo],
+        `INSERT INTO reportes (motivo, estado, fecha, id_tipo_reporte, articulos_id) VALUES (?, 'pendiente', NOW(), ?, ?)`,
+        [motivo, idTipoReporte || null, articuloId],
       );
       const reporteId = reportResult.insertId;
 
@@ -135,32 +135,55 @@ const Report = {
     }
   },
 
-  resolveReport: async (reporteId, accion) => {
+  resolveReport: async (reporteId, accion, moderadorId) => {
     const conn = await db.getConnection();
     try {
-      const nuevoEstadoReporte = accion === "aprobar" ? "retirado" : "activo";
-      const nuevoEstadoArticulo =
-        accion === "aprobar" ? "RETIRADO" : "DISPONIBLE";
+      const nuevoEstadoReporte = accion === 'aprobar' ? 'retirado' : 'activo';
+      const nuevoEstadoArticulo = accion === 'aprobar' ? 'RETIRADO' : 'DISPONIBLE';
 
       await conn.beginTransaction();
 
+      const [articulos] = await conn.query(
+        `SELECT a.id AS articulo_id, a.titulo, a.usuarios_id AS propietario_id, t.tipo AS tipo_reporte
+         FROM articulos a
+         INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
+         INNER JOIN reportes r ON r.id = atr.reportes_id
+         LEFT JOIN tipo_reporte t ON t.id = r.id_tipo_reporte
+         WHERE atr.reportes_id = ?
+         LIMIT 1`,
+        [reporteId]
+      );
+      const articulo = articulos[0];
+
       await conn.query(
         `UPDATE articulos a
-                 INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
-                 SET a.estadoVenta = ?
-                 WHERE atr.reportes_id = ?`,
-        [nuevoEstadoArticulo, reporteId],
+         INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
+         SET a.estadoVenta = ?
+         WHERE atr.reportes_id = ?`,
+        [nuevoEstadoArticulo, reporteId]
       );
 
-      await conn.query(`UPDATE reportes SET estado = ? WHERE id = ?`, [
-        nuevoEstadoReporte,
-        reporteId,
-      ]);
+      await conn.query(
+        `UPDATE reportes SET estado = ? WHERE id = ?`,
+        [nuevoEstadoReporte, reporteId]
+      );
+
+      if (articulo && moderadorId) {
+        const motivoReporte = articulo.tipo_reporte || 'sin motivo especificado';
+        const contenido = accion === 'aprobar'
+          ? `Tu artículo "${articulo.titulo}" ha sido retirado de la plataforma tras la revisión de un reporte. Motivo del reporte: ${motivoReporte}.`
+          : `Tu artículo "${articulo.titulo}" fue reportado, pero tras la revisión de un moderador se ha comprobado que cumple las normas y sigue disponible en la plataforma.`;
+
+        await conn.query(
+          `INSERT INTO mensajes (titulo, contenido, fecha, usuarios_id, articulos_id) VALUES (?, ?, NOW(), ?, ?)`,
+          ['Notificación de moderación', contenido, moderadorId, articulo.articulo_id]
+        );
+      }
 
       await conn.commit();
     } catch (error) {
       await conn.rollback();
-      console.error("Error al resolver el reporte:", error);
+      console.error('Error al resolver el reporte:', error);
       throw error;
     } finally {
       conn.release();
