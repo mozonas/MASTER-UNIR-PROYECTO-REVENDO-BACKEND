@@ -36,16 +36,15 @@ const Report = {
     }
   },
 
-  createReport: async (articuloId, motivo, reportType, usuarioId) => {
+  createReport: async (articuloId, motivo, usuarioId) => {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
 
       const [reportResult] = await conn.query(
-        `INSERT INTO reportes (motivo, id_tipo_reporte, estado, fecha) VALUES (?,?, 'pendiente', NOW())`,
-        [motivo, reportType],
+        `INSERT INTO reportes (motivo, estado, fecha) VALUES (?, 'pendiente', NOW())`,
+        [motivo],
       );
-      
       const reporteId = reportResult.insertId;
 
       const [userCheck] = await conn.query(
@@ -273,8 +272,6 @@ const Report = {
   },
 };
 
-module.exports = Report;
-
 const getDailyReports = async () => {
   const [result] = await db.query(`
         SELECT 
@@ -291,6 +288,7 @@ const getDailyReports = async () => {
         `);
   return result;
 };
+
 const getWeeklyReports = async () => {
   const [result] = await db.query(`
         SELECT 
@@ -307,6 +305,7 @@ const getWeeklyReports = async () => {
     `);
   return result;
 };
+
 const getMonthlyReports = async () => {
   const [result] = await db.query(`
         SELECT 
@@ -324,10 +323,13 @@ const getMonthlyReports = async () => {
   return result;
 };
 
-const getReportTypes = async () => {
-  const [result] = await db.query(`
-        SELECT * FROM tipo_reporte ORDER BY tipo ASC;
-    `);
+const getReportTypes = async (categoria) => {
+  const [result] = await db.query(
+    `
+        SELECT id, tipo FROM tipo_reporte WHERE categoria='${categoria}' ORDER BY tipo ASC;`,
+  );
+  console.log([result]);
+
   return result;
 };
 
@@ -336,5 +338,5 @@ module.exports = {
   getDailyReports,
   getMonthlyReports,
   getWeeklyReports,
-  getReportTypes
+  getReportTypes,
 };

@@ -121,31 +121,57 @@ const getUserArticles = async (userId) => {
 /**
  *
  */
+// const getArticle = async (id) => {
+//   try {
+//     const [rows] = await pool.query(
+//       `SELECT 
+// a.*,
+// c.nombre AS categoria,
+// COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
+// COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
+// COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
+// COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
+// COALESCE(d.pais, '') AS pais_direccion_vendedor
+// FROM articulos a 
+// INNER JOIN categorias c
+//     ON a.categorias_id = c.id 
+// INNER JOIN usuarios u
+//     ON u.id = a.usuarios_id 
+// LEFT JOIN direcciones d
+//     ON d.usuario_id = u.id 
+//  where a.id = ?`,
+//       [id],
+//     );
+//     console.log("Artículo obtenido:", rows[0]);
+//     if (rows[0] === undefined) {
+//       console.error("Artículo no encontrado");
+//       //throw new Error("Artículo no encontrado");
+//     }
+//     return rows[0];
+//   } catch (error) {
+//     console.error("Error al obtener el artículo:", error);
+//     throw error;
+//   }
+// };
+
 const getArticle = async (id) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
-a.*,
-c.nombre AS categoria,
-COALESCE(d.direccion, '') AS calle_direccion_vendedor, 
-COALESCE(d.codigo_postal, '') AS cp_direccion_vendedor, 
-COALESCE(d.ciudad, '') AS ciudad_direccion_vendedor, 
-COALESCE(d.provincia, '') AS provincia_direccion_vendedor, 
-COALESCE(d.pais, '') AS pais_direccion_vendedor
-FROM articulos a 
-INNER JOIN categorias c
-    ON a.categorias_id = c.id 
-INNER JOIN usuarios u
-    ON u.id = a.usuarios_id 
-LEFT JOIN direcciones d
-    ON d.usuario_id = u.id 
- where a.id = ?`,
+        a.*,
+        c.nombre AS categoria,
+        u.direccion AS direccion
+      FROM articulos a 
+      INNER JOIN categorias c
+          ON a.categorias_id = c.id 
+      INNER JOIN usuarios u
+          ON u.id = a.usuarios_id 
+      WHERE a.id = ?`,
       [id],
     );
     console.log("Artículo obtenido:", rows[0]);
     if (rows[0] === undefined) {
       console.error("Artículo no encontrado");
-      //throw new Error("Artículo no encontrado");
     }
     return rows[0];
   } catch (error) {
@@ -178,7 +204,7 @@ FROM fotos f
   }
 };
 
-const updateArticle = async (articleId, updatedData) => {
+const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny = false) => {
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
@@ -208,10 +234,13 @@ const updateArticle = async (articleId, updatedData) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [result] = await connection.query("UPDATE articulos SET ? WHERE id = ?", [
-      articlePayload,
-      articleId,
-    ]);
+    const [result] = await connection.query(
+      `UPDATE articulos
+       SET ?
+       WHERE id = ?
+         AND (? = 1 OR usuarios_id = ?)`,
+      [articlePayload, articleId, canEditAny ? 1 : 0, requesterUserId],
+    );
 
     if (result.affectedRows > 0) {
       if (images.length) {
@@ -313,6 +342,39 @@ const deleteArticle = async (articleId) => {
   } catch (error) {
     console.error("Error al eliminar el artículo:", error);
     throw error;
+  }
+};
+
+// Marcado manual del artículo como vendido por su propio propietario:
+// actualiza el artículo (estado + método de pago real) y registra la transacción, de forma atómica
+const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio }) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [updateResult] = await connection.query(
+      "UPDATE articulos SET estadoVenta = 'VENDIDO', tipoPago = ? WHERE id = ? AND estadoVenta = 'DISPONIBLE'",
+      [tipoPago, articleId],
+    );
+
+    if (updateResult.affectedRows === 0) {
+      await connection.rollback();
+      return { error: 'NOT_AVAILABLE' };
+    }
+
+    const [insertResult] = await connection.query(
+      "INSERT INTO transacciones (fecha, usuarios_id, articulos_id, precio) VALUES (NOW(), ?, ?, ?)",
+      [vendedorId, articleId, precio],
+    );
+
+    await connection.commit();
+    return { transaccionId: insertResult.insertId };
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al marcar el artículo como vendido:", error);
+    throw error;
+  } finally {
+    connection.release();
   }
 };
 
@@ -488,10 +550,11 @@ const searchWithFilters = async (filters) => {
   return rows;
 };
 
+//260626 MOG INICIO RECUPERACION FUNCIONES ACTIVIDAD
 //**ARTICULOS VENDIDOS PARA ACTIVIDAD */
 const selectSold = async (rango) => {
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
       a.titulo,
       a.descripcion,
       a.created_at AS fecha,
@@ -506,21 +569,21 @@ const selectSold = async (rango) => {
   `);
   return result;
 };
-
+ 
 // 1. Vendidos HOY
-const selectDailySold = () => 
+const selectDailySold = () =>
   selectSold(`DATE(a.created_at) = CURDATE()`);
-
+ 
 // 2. Vendidos últimos 7 DÍAS
-const selectWeeklySold = () => 
+const selectWeeklySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
-
+ 
 // 3. Vendidos MES ACTUAL
-const selectMonthlySold = () => 
+const selectMonthlySold = () =>
   selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
-
+ 
 //**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
-// Obtener articulos vendidos al mes 
+// Obtener articulos vendidos al mes
 const selectSoldThisMonth = async (month, year)=>{
     const [result]= await pool.query (`
        SELECT day(created_at) AS dia, COUNT(*) AS total
@@ -557,7 +620,7 @@ const selectByThisMonth = async ()=>{
 }
 // Articulos publicados el mes pasado
 const selectByLastMonth = async ()=>{
-  
+ 
     const [result]= await pool.query (`
         SELECT COUNT(*) AS total
         FROM articulos
@@ -570,7 +633,7 @@ const selectByLastMonth = async ()=>{
 //**Obtener actividad diaria de articulos */
 const selectDaily = async ()=>{
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -585,7 +648,7 @@ const selectDaily = async ()=>{
 }
 const selectWeekly = async ()=>{
   const [result] = await pool.query(`
-    SELECT 
+    SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -598,9 +661,9 @@ const selectWeekly = async ()=>{
     `);
     return result
 }
-const selectMonthly = async () =>{ 
+const selectMonthly = async () =>{
   const [result] = await pool.query(`
-  SELECT 
+  SELECT
     a.titulo,
     a.descripcion,
     a.created_at AS fecha,
@@ -615,7 +678,10 @@ const selectMonthly = async () =>{
 }
 
 
-module.exports = {
+//260626 FIN
+
+
+/* module.exports = {
   getAll,
   getUserArticles,
   getArticleEnums,
@@ -636,5 +702,45 @@ module.exports = {
   selectWeekly,
   selectWeeklySold,
   selectDaily,
+  selectDailySold,
+  selectMonthly,
+  selectWeekly,
+  selectDaily,
+  selectByLastMonth,
+  selectByThisMonth,
+  selectSoldByYear,
+  selectSoldThisMonth,  
+  selectMonthlySold,
+  selectWeeklySold,
+  selectDailySold,
+  selectSold
+};
+ */
+//mog 260626 -> comentado por conflictos del merge
+module.exports = {
+  getAll,
+  getUserArticles,
+  getArticleEnums,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  marcarArticuloVendido,
+  getArticle,
+  getArticleFotos,
+  searchArticles,
+  searchWithFilters,
+
+  // Estadísticas
+  selectSold,
+  selectSoldThisMonth,
+  selectSoldByYear,
+  selectByThisMonth,
+  selectByLastMonth,
+  selectMonthly,
+  selectMonthlySold,
+  selectWeekly,
+  selectWeeklySold,
+  selectDaily,
   selectDailySold
 };
+

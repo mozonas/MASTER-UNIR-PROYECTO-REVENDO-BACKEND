@@ -17,7 +17,7 @@ router.get('/chats/pending', reportsController.getPendingChats);
 router.get('/chats/history', reportsController.getChatsHistory);
 
 // Ruta para obtener el tipo de reporte
-router.get('/types', reportsController.getReportTypes);
+router.get('/types/:categoria', reportsController.getReportTypes);
 
 // Enviar notificación al usuario afectado por la incidencia
 router.post('/chats/notificar/:reporteId', reportsController.enviarNotificacionChat);
