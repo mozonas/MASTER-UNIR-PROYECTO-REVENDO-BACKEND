@@ -21,7 +21,7 @@ router.get('/chats/history', reportsController.getChatsHistory);
 router.get('/types/:categoria', reportsController.getReportTypes);
 
 // Enviar notificación al usuario afectado por la incidencia
-router.post('/chats/notificar/:reporteId', reportsController.enviarNotificacionChat);
+router.post('/chats/notificar/:reporteId', checkAuthToken, reportsController.enviarNotificacionChat);
 
 // Ruta para reportar un usuario en el chat
 router.post('/chats/reportar-usuario', reportsController.reportarUsuarioChat);

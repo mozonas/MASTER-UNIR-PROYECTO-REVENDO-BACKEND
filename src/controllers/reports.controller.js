@@ -142,17 +142,22 @@ const ReportsController = {
     enviarNotificacionChat: async (req, res) => {
         try {
             const reporteId = parseInt(req.params.reporteId);
-            const { contenido, usuarios_id, articulos_id } = req.body;
+            const { contenido, articulos_id } = req.body;
+            const moderadorId = Number(req.user?.userId);
 
-            if (!contenido || !usuarios_id || !articulos_id) {
-                return res.status(400).json({ error: 'Contenido, usuarios_id y articulos_id son requeridos' });
+            if (!contenido || !articulos_id) {
+                return res.status(400).json({ error: 'contenido y articulos_id son requeridos' });
+            }
+
+            if (!moderadorId) {
+                return res.status(401).json({ error: 'Token inválido o sin usuario' });
             }
 
             const NuevoMensaje = {
                 titulo: 'Notificación de Incidencia',
                 contenido,
                 fecha: new Date(),
-                usuarios_id,
+                usuarios_id: moderadorId,
                 articulos_id
             };
 
