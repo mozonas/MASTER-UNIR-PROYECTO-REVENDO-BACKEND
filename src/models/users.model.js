@@ -182,7 +182,7 @@ const selectUsersByRange = async (rango) => {
 //definicion de los rangos daily, weekly y monthly
 const selectDailyUsers = () => selectUsersByRange(`DATE(created_at) = CURDATE()`);
 const selectWeeklyUsers = () => selectUsersByRange(`created_at >= CURDATE() - INTERVAL 7 DAY`);
-const selectMonthlyUsers = () => selectUsersByRange(`MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())`);
+const selectMonthlyUsers = () => selectUsersByRange(`created_at >= CURDATE() - INTERVAL 30 DAY`);
 
 
 module.exports = {
