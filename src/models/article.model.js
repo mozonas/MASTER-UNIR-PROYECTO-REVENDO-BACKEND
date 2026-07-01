@@ -586,8 +586,9 @@ const selectWeeklySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
  
 // 3. Vendidos MES ACTUAL
+//CGM 010726 Cambio de la query a interval 30 day
 const selectMonthlySold = () =>
-  selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
+  selectSold(`a.created_at >= CURDATE() - INTERVAL 30 DAY`);
  
 //**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
 // Obtener articulos vendidos al mes
