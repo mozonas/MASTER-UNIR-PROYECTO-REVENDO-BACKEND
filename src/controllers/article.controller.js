@@ -289,12 +289,12 @@ const getById = async (req, res) => {
 
     const { id } = req.params;
     const responseArticle = await getArticle(id);
-    if (responseArticle === undefined) {
+    if (responseArticle === undefined || ['RETIRADO', 'BORRADO'].includes(responseArticle.estadoVenta)) {
       console.error("Artículo no encontrado");
       return res.status(404).json({
         status: "error",
         message: "Artículo no encontrado",
-        data: responseArticle
+        data: undefined
       });
     }
 

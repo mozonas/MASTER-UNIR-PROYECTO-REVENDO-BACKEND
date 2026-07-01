@@ -104,10 +104,17 @@ const getUserArticles = async (userId) => {
           WHERE f.articulos_id = a.id
           ORDER BY f.id ASC
           LIMIT 1
-        ) AS foto
+        ) AS foto,
+        (
+          SELECT atr.reportes_id
+          FROM articulos_tiene_reportes atr
+          INNER JOIN reportes r ON r.id = atr.reportes_id
+          WHERE atr.articulos_id = a.id AND r.estado = 'pendiente'
+          LIMIT 1
+        ) AS estado_reporte
       FROM articulos a
       LEFT JOIN categorias c ON a.categorias_id = c.id
-      WHERE a.usuarios_id = ? AND a.estadoVenta <> 'BORRADO'
+      WHERE a.usuarios_id = ? AND a.estadoVenta NOT IN ('BORRADO', 'RETIRADO')
       ORDER BY a.id DESC`,
       [userId],
     );
@@ -579,8 +586,9 @@ const selectWeeklySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
  
 // 3. Vendidos MES ACTUAL
+//CGM 010726 Cambio de la query a interval 30 day
 const selectMonthlySold = () =>
-  selectSold(`MONTH(a.created_at) = MONTH(CURRENT_DATE())`);
+  selectSold(`a.created_at >= CURDATE() - INTERVAL 30 DAY`);
  
 //**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
 // Obtener articulos vendidos al mes
