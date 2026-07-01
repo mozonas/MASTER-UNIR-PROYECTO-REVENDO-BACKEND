@@ -134,26 +134,26 @@ const Report = {
 
       const [articulos] = await conn.query(
         `SELECT a.id AS articulo_id, a.titulo, a.usuarios_id AS propietario_id, t.tipo AS tipo_reporte
-         FROM articulos a
-         INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
-         INNER JOIN reportes r ON r.id = atr.reportes_id
+         FROM reportes r
+         INNER JOIN articulos a ON r.articulos_id = a.id
          LEFT JOIN tipo_reporte t ON t.id = r.id_tipo_reporte
-         WHERE atr.reportes_id = ?
+         WHERE r.id = ?
          LIMIT 1`,
         [reporteId]
       );
+
       const articulo = articulos[0];
 
+      if (articulo) {
+        
+        await conn.query(
+          `UPDATE articulos SET estadoVenta = ? WHERE id = ?`,
+          [nuevoEstadoArticulo, articulo.articulo_id]
+        );
+      }
+      
       await conn.query(
-        `UPDATE articulos a
-         INNER JOIN articulos_tiene_reportes atr ON a.id = atr.articulos_id
-         SET a.estadoVenta = ?
-         WHERE atr.reportes_id = ?`,
-        [nuevoEstadoArticulo, reporteId]
-      );
-
-      await conn.query(
-        `UPDATE reportes SET estado = ? WHERE id = ?`,
+        `UPDATE reportes SET estado = ?, resuelto_at = NOW() WHERE id = ?`,
         [nuevoEstadoReporte, reporteId]
       );
 
@@ -232,13 +232,12 @@ const Report = {
                     r.fecha,
                     r.motivo,
                     r.estado,
-                    r.created_at,
-                    a.titulo
+                    DATE_FORMAT(IFNULL(r.resuelto_at, r.created_at), '%Y-%m-%dT%H:%i:%s.000Z') AS created_at,
+                    IFNULL(a.titulo, 'Artículo retirado del catálogo') AS titulo
                 FROM reportes r
-                INNER JOIN articulos_tiene_reportes atr ON r.id = atr.reportes_id
-                INNER JOIN articulos a ON atr.articulos_id = a.id
-                WHERE r.estado IN ('activo', 'retirado')
-                ORDER BY r.created_at DESC
+                LEFT JOIN articulos a ON r.articulos_id = a.id
+                WHERE r.estado = 'activo' OR r.estado = 'retirado'
+                ORDER BY created_at DESC
             `);
       return rows;
     } catch (error) {
