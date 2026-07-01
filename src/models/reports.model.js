@@ -328,7 +328,7 @@ const getMonthlyReports = async () => {
         INNER JOIN articulos_tiene_reportes ar ON ar.reportes_id = r.id
         INNER JOIN articulos a ON a.id = ar.articulos_id
         INNER JOIN usuarios u ON u.id = a.usuarios_id
-        WHERE MONTH(r.fecha) = MONTH(CURRENT_DATE())
+        WHERE a.created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
         ORDER BY r.fecha DESC
     `);
   return result;

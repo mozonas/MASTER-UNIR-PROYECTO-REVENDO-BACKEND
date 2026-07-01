@@ -679,7 +679,7 @@ const selectMonthly = async () =>{
     u.apellidos
     FROM articulos a
     INNER JOIN usuarios u ON u.id = a.usuarios_id
-    WHERE MONTH(a.created_at) = MONTH(CURRENT_DATE())
+    WHERE a.created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
     ORDER BY a.created_at DESC
     `);
     return result
