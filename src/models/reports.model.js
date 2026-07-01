@@ -47,17 +47,6 @@ const Report = {
       );
       const reporteId = reportResult.insertId;
 
-      const [userCheck] = await conn.query(
-        `SELECT id FROM usuarios WHERE id = ?`,
-        [usuarioId],
-      );
-      if (userCheck.length > 0) {
-        await conn.query(
-          `INSERT INTO usuarios_tiene_reportes (usuarios_id, reportes_id) VALUES (?, ?)`,
-          [usuarioId, reporteId],
-        );
-      }
-
       await conn.query(
         `INSERT INTO articulos_tiene_reportes (articulos_id, reportes_id) VALUES (?, ?)`,
         [articuloId, reporteId],
