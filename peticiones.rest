@@ -92,3 +92,8 @@ GET http://localhost:3000/api/filters/search?orden=precio_desc
 
 ###
 GET http://localhost:3000/api/reports/types/ARTICULO
+
+###
+PUT http://localhost:3000/api/admin/users/block/108
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQyLCJ1c2VybmFtZSI6ImFkbWluaXN0cmFkb3IxIiwiZW1haWwiOiJhZG1pbmlzdHJhZG9yMUByZXZlbmRvLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiaWF0IjoxNzgyOTg0NTgyfQ.SSkMfBq8Q3BhkeQwqLDoLGD9I4uEzdAIEHuqIWhucvg
+Content-Type: application/json
