@@ -185,6 +185,25 @@ const selectWeeklyUsers = () => selectUsersByRange(`created_at >= CURDATE() - IN
 const selectMonthlyUsers = () => selectUsersByRange(`created_at >= CURDATE() - INTERVAL 30 DAY`);
 
 
+// MOG 02072026 -> Función para bloquear usuario desde reporte
+const blockUserFromReport = async (reportId) => {
+    const [result] = await db.query(
+        `
+        UPDATE usuarios
+        SET isBlocked = 1
+        WHERE id = (
+            SELECT a.usuarios_id
+            FROM reportes r
+            JOIN articulos a ON a.id = r.articulos_id
+            WHERE r.id = ?
+        )
+        `,
+        [String(reportId)]
+    );
+
+    return result;
+};
+
 module.exports = {
     getAll,
     getById,
@@ -205,5 +224,6 @@ module.exports = {
     deleteUser,
     toggleBlock,
     getByUsername,
-    getByEmail
+    getByEmail,
+    blockUserFromReport
 };

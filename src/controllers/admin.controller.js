@@ -193,7 +193,21 @@ const deleteCategory = async (req, res) => {
     return res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+//mog 02072026 ->bloquear usuario desde reporte
+// ===============================
+//   PUT bloquear usuario desde reporte
+// ===============================
+const blockUserFromReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await userModel.blockUserFromReport(id);
 
+    return res.json({ message: 'Usuario bloqueado correctamente desde reporte' });
+  } catch (error) {
+    console.error('Error bloqueando usuario desde reporte:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
 
 module.exports = {
   getAllUsers,
@@ -205,5 +219,6 @@ module.exports = {
   getCategoriesPaginated,
   createCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  blockUserFromReport
 };
