@@ -215,13 +215,13 @@ const updateArticle = async (articleId, requesterUserId, updatedData, canEditAny
   const rawImages = Array.isArray(updatedData.images)
     ? updatedData.images
     : [
-        updatedData.image1,
-        updatedData.image2,
-        updatedData.image3,
-        updatedData.image4,
-        updatedData.image5,
-        updatedData.image,
-      ];
+      updatedData.image1,
+      updatedData.image2,
+      updatedData.image3,
+      updatedData.image4,
+      updatedData.image5,
+      updatedData.image,
+    ];
 
   const images = rawImages
     .map((value) => (typeof value === "string" ? value.trim() : ""))
@@ -283,13 +283,13 @@ const createArticle = async (articleData) => {
   const rawImages = Array.isArray(articleData.images)
     ? articleData.images
     : [
-        articleData.image1,
-        articleData.image2,
-        articleData.image3,
-        articleData.image4,
-        articleData.image5,
-        articleData.image,
-      ];
+      articleData.image1,
+      articleData.image2,
+      articleData.image3,
+      articleData.image4,
+      articleData.image5,
+      articleData.image,
+    ];
 
   const images = rawImages
     .map((value) => (typeof value === "string" ? value.trim() : ""))
@@ -354,7 +354,37 @@ const deleteArticle = async (articleId) => {
 
 // Marcado manual del artículo como vendido por su propio propietario:
 // actualiza el artículo (estado + método de pago real) y registra la transacción, de forma atómica
-const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio }) => {
+// const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio }) => {
+//   const connection = await pool.getConnection();
+//   try {
+//     await connection.beginTransaction();
+
+//     const [updateResult] = await connection.query(
+//       "UPDATE articulos SET estadoVenta = 'VENDIDO', tipoPago = ? WHERE id = ? AND estadoVenta = 'DISPONIBLE'",
+//       [tipoPago, articleId],
+//     );
+
+//     if (updateResult.affectedRows === 0) {
+//       await connection.rollback();
+//       return { error: 'NOT_AVAILABLE' };
+//     }
+
+//     const [insertResult] = await connection.query(
+//       "INSERT INTO transacciones (fecha, usuarios_id, articulos_id, precio) VALUES (NOW(), ?, ?, ?)",
+//       [vendedorId, articleId, precio],
+//     );
+
+//     await connection.commit();
+//     return { transaccionId: insertResult.insertId };
+//   } catch (error) {
+//     await connection.rollback();
+//     console.error("Error al marcar el artículo como vendido:", error);
+//     throw error;
+//   } finally {
+//     connection.release();
+//   }
+// };
+const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio, compradorId }) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -368,6 +398,8 @@ const marcarArticuloVendido = async (articleId, vendedorId, { tipoPago, precio }
       await connection.rollback();
       return { error: 'NOT_AVAILABLE' };
     }
+
+    const vendedorId = compradorId ? Number(compradorId) : vendedorId;
 
     const [insertResult] = await connection.query(
       "INSERT INTO transacciones (fecha, usuarios_id, articulos_id, precio) VALUES (NOW(), ?, ?, ?)",
@@ -576,70 +608,70 @@ const selectSold = async (rango) => {
   `);
   return result;
 };
- 
+
 // 1. Vendidos HOY
 const selectDailySold = () =>
   selectSold(`DATE(a.created_at) = CURDATE()`);
- 
+
 // 2. Vendidos últimos 7 DÍAS
 const selectWeeklySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 7 DAY`);
- 
+
 // 3. Vendidos MES ACTUAL
 //CGM 010726 Cambio de la query a interval 30 day
 const selectMonthlySold = () =>
   selectSold(`a.created_at >= CURDATE() - INTERVAL 30 DAY`);
- 
+
 //**ARTIUCLOS VENDIDOS PARA GRÁFICAS */
 // Obtener articulos vendidos al mes
-const selectSoldThisMonth = async (month, year)=>{
-    const [result]= await pool.query (`
+const selectSoldThisMonth = async (month, year) => {
+  const [result] = await pool.query(`
        SELECT day(created_at) AS dia, COUNT(*) AS total
        FROM articulos
        WHERE estadoVenta = 'VENDIDO'
        AND month(created_at) = ? AND year(created_at) =?
        GROUP BY dia
        ORDER BY dia ASC`,
-       [month, year]);
-       return result
+    [month, year]);
+  return result
 }
 // Obtener articulos vendidos mensuales por año
-const selectSoldByYear = async (year) =>{
-    const [result]= await pool.query(`
+const selectSoldByYear = async (year) => {
+  const [result] = await pool.query(`
        SELECT month(created_at) AS mes, COUNT(*) AS total
        FROM articulos
        WHERE estadoVenta = 'VENDIDO'
         AND year(created_at) =?
        GROUP BY mes
        ORDER BY mes ASC`,
-       [year]);
-       return result;
+    [year]);
+  return result;
 }
 //**PUBLICADOS COMPARATIVA PARA METRIC */
 //Obtener articulos publicados por mes
-const selectByThisMonth = async ()=>{
-    const [result]= await pool.query (`
+const selectByThisMonth = async () => {
+  const [result] = await pool.query(`
         SELECT COUNT(*) AS total
         FROM articulos
         WHERE month(created_at) = MONTH(CURRENT_DATE())
             AND year(created_at) = YEAR(CURRENT_DATE())
         `)
-        return result[0];
+  return result[0];
 }
 // Articulos publicados el mes pasado
-const selectByLastMonth = async ()=>{
- 
-    const [result]= await pool.query (`
+const selectByLastMonth = async () => {
+
+  const [result] = await pool.query(`
         SELECT COUNT(*) AS total
         FROM articulos
         WHERE MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
           AND YEAR(created_at) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
     `);
-        return result[0];
+  return result[0];
 }
 //**ARTICULOS CREADOS */
 //**Obtener actividad diaria de articulos */
-const selectDaily = async ()=>{
+const selectDaily = async () => {
   const [result] = await pool.query(`
     SELECT
     a.titulo,
@@ -652,9 +684,9 @@ const selectDaily = async ()=>{
     WHERE DATE(a.created_at) = CURDATE()
     ORDER BY a.created_at DESC
     `);
-    return result
+  return result
 }
-const selectWeekly = async ()=>{
+const selectWeekly = async () => {
   const [result] = await pool.query(`
     SELECT
     a.titulo,
@@ -667,9 +699,9 @@ const selectWeekly = async ()=>{
     WHERE a.created_at >= CURDATE() -INTERVAL 7 DAY
     ORDER BY a.created_at DESC
     `);
-    return result
+  return result
 }
-const selectMonthly = async () =>{
+const selectMonthly = async () => {
   const [result] = await pool.query(`
   SELECT
     a.titulo,
@@ -682,7 +714,7 @@ const selectMonthly = async () =>{
     WHERE a.created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
     ORDER BY a.created_at DESC
     `);
-    return result
+  return result
 }
 
 
