@@ -86,8 +86,8 @@ const createArticleHandler = async (req, res) => {
 
     const uploadedImages = Array.isArray(req.files)
       ? req.files
-          .filter((file) => file && typeof file.filename === 'string')
-          .map((file) => `uploads/${file.filename}`)
+        .filter((file) => file && typeof file.filename === 'string')
+        .map((file) => `uploads/${file.filename}`)
       : [];
 
     const firstImage = uploadedImages[0]
@@ -128,8 +128,8 @@ const editArticle = async (req, res) => {
     const articleId = req.params.articleId;
     const uploadedImages = Array.isArray(req.files)
       ? req.files
-          .filter((file) => file && typeof file.filename === 'string')
-          .map((file) => `uploads/${file.filename}`)
+        .filter((file) => file && typeof file.filename === 'string')
+        .map((file) => `uploads/${file.filename}`)
       : [];
     const updatedData = {
       ...req.body,
@@ -206,11 +206,80 @@ const eraseArticle = async (req, res) => {
 // indicando el método de pago real y el precio acordado
 const TIPOS_PAGO_VALIDOS = ['Efectivo', 'Tarjeta', 'Bizum'];
 
+// const marcarVendido = async (req, res) => {
+//   try {
+//     const { articleId } = req.params;
+//     const requesterUserId = Number(req.user?.userId);
+//     const { tipoPago, precio } = req.body;
+
+//     if (!requesterUserId) {
+//       return res.status(401).json({
+//         status: "error",
+//         message: "Token inválido o sin usuario",
+//       });
+//     }
+
+//     if (!TIPOS_PAGO_VALIDOS.includes(tipoPago)) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Método de pago no válido",
+//       });
+//     }
+
+//     const precioAcordado = Number(precio);
+//     if (!precioAcordado || precioAcordado <= 0) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "El precio acordado debe ser un número positivo",
+//       });
+//     }
+
+//     const articulo = await getArticle(articleId);
+//     if (!articulo) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: "Artículo no encontrado",
+//       });
+//     }
+
+//     if (Number(articulo.usuarios_id) !== requesterUserId) {
+//       return res.status(403).json({
+//         status: "error",
+//         message: "No puedes marcar como vendido un artículo que no es tuyo",
+//       });
+//     }
+
+//     const resultado = await marcarArticuloVendido(articleId, requesterUserId, {
+//       tipoPago,
+//       precio: precioAcordado,
+//     });
+
+//     if (resultado.error === 'NOT_AVAILABLE') {
+//       return res.status(409).json({
+//         status: "error",
+//         message: "El artículo ya no está disponible",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Artículo marcado como vendido",
+//       transaccionId: resultado.transaccionId,
+//     });
+//   } catch (error) {
+//     console.error("Error al marcar el artículo como vendido:", error);
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Error al marcar el artículo como vendido",
+//     });
+//   }
+// };
+
 const marcarVendido = async (req, res) => {
   try {
     const { articleId } = req.params;
     const requesterUserId = Number(req.user?.userId);
-    const { tipoPago, precio } = req.body;
+    const { tipoPago, precio, compradorId } = req.body; // 🌟 CAPTURAMOS compradorId DESDE EL FRONTEND
 
     if (!requesterUserId) {
       return res.status(401).json({
@@ -252,6 +321,7 @@ const marcarVendido = async (req, res) => {
     const resultado = await marcarArticuloVendido(articleId, requesterUserId, {
       tipoPago,
       precio: precioAcordado,
+      compradorId
     });
 
     if (resultado.error === 'NOT_AVAILABLE') {
@@ -280,12 +350,12 @@ const getById = async (req, res) => {
     const requesterUserId = Number(req.user?.userId);
     const requesterRole = String(req.user?.perfil || '').toUpperCase();
     const canEditAny = requesterRole === 'MODERADOR';
-   /*  if (!requesterUserId) {
-      return res.status(401).json({
-        status: "error",
-        message: "Token inválido o sin usuario",
-      });
-    } */
+    /*  if (!requesterUserId) {
+       return res.status(401).json({
+         status: "error",
+         message: "Token inválido o sin usuario",
+       });
+     } */
 
     const { id } = req.params;
     const responseArticle = await getArticle(id);
@@ -368,83 +438,82 @@ const searchArticles = async (req, res) => {
 
 
 //**PARA DASHBOARD */
-const getSoldThisMonth = async (req, res)=>{
-    try {
-        const {month} = req.params;
-        const year = new Date().getFullYear()
-        if(!month){
-            return res.status (400).json({
-                message: 'month no recibido'
-            })
-        }
-        const ventasMensuales = await ArticleModel.selectSoldThisMonth(month, year)
-        res.json (ventasMensuales)
-    } catch (error) {
-        console.error("ERROR EN CONTROLLER:", error);
-         console.error(error);
-        res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
-      }
+const getSoldThisMonth = async (req, res) => {
+  try {
+    const { month } = req.params;
+    const year = new Date().getFullYear()
+    if (!month) {
+      return res.status(400).json({
+        message: 'month no recibido'
+      })
+    }
+    const ventasMensuales = await ArticleModel.selectSoldThisMonth(month, year)
+    res.json(ventasMensuales)
+  } catch (error) {
+    console.error("ERROR EN CONTROLLER:", error);
+    console.error(error);
+    res.status(500).json({ message: 'ERROR obteniendo ventas mes' })
+  }
 }
 
 // Llamada al modelo soldByyear
-const getSoldByYear = async (req, res)=>{
-    try {
-        const {year}= req.params
-        if(!year){
-            return res.status (400).json ({
-            message: 'parámetro year no recibido'
-        })
-     }
-     const ventasAnuales = await ArticleModel.selectSoldByYear(year);
-     res.json (ventasAnuales)
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error obteniendo fechas por año' });
+const getSoldByYear = async (req, res) => {
+  try {
+    const { year } = req.params
+    if (!year) {
+      return res.status(400).json({
+        message: 'parámetro year no recibido'
+      })
     }
+    const ventasAnuales = await ArticleModel.selectSoldByYear(year);
+    res.json(ventasAnuales)
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error obteniendo fechas por año' });
+  }
 }
 
 // LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
-const getThisMonth = async (req, res) =>{
-    try {
-        const data = await ArticleModel.selectByThisMonth()
-        res.json ({total: data.total})
-    } catch (error) {
-        console.error (error)
-        return res.status (500).json({
-            message: ' Error devolviendo articulos publicados al mes'
-        })
-    }
+const getThisMonth = async (req, res) => {
+  try {
+    const data = await ArticleModel.selectByThisMonth()
+    res.json({ total: data.total })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: ' Error devolviendo articulos publicados al mes'
+    })
+  }
 }
 
-const getLastMonth = async (req,res) =>{
-    try {
-        const data = await ArticleModel.selectByLastMonth();
-        res.json ({total: data.total})
-    } catch (error) {
-        console.error (error)
-        return res.status (500).json({
-            message:'Error devolviendo articulos publicados el mes pasado'
-        })
-        
-    }
+const getLastMonth = async (req, res) => {
+  try {
+    const data = await ArticleModel.selectByLastMonth();
+    res.json({ total: data.total })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: 'Error devolviendo articulos publicados el mes pasado'
+    })
+  }
 }
 
 //Controlador unificado para la Metric Card de publicaciones
-const getPublishedComp = async (req,res)=>{
-  try{
+const getPublishedComp = async (req, res) => {
+  try {
     const [thisMonthData, lastMonthData] = await Promise.all([
       ArticleModel.selectByThisMonth(),
       ArticleModel.selectByLastMonth()
     ]);
     const thisMonth = thisMonthData?.total || 0;
     const lastMonth = lastMonthData?.total || 0;
-    const difference = thisMonth -lastMonth;
-    return res.json ({thisMonth, lastMonth, difference});
-  }catch (error){
+    const difference = thisMonth - lastMonth;
+    return res.json({ thisMonth, lastMonth, difference });
+  } catch (error) {
     console.error('Error en getPublishedComparison:', error);
-        return res.status(500).json({ 
-            message: 'Error interno del servidor al calcular la comparativa.' 
-        });
+    return res.status(500).json({
+      message: 'Error interno del servidor al calcular la comparativa.'
+    });
   }
 }
 
@@ -463,6 +532,6 @@ module.exports = {
   getThisMonth,
   getLastMonth,
   getSoldThisMonth,
-  getSoldByYear, 
+  getSoldByYear,
   getPublishedComp
 };
