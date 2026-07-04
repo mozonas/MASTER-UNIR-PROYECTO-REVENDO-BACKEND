@@ -25,6 +25,26 @@ const getById = async (req, res) => {
     }
 };
 
+// Obtener usuarios nuevos mensuales y mes anterior
+const getUsersStats = async (req, res) => {
+
+    console.log('entramos en getUsersStats')
+    try {
+        const current = await UserModel.selectUsersCurrentMonth();
+        const last = await UserModel.selectUsersLastMonth();
+        res.json({
+            usuariosMesActual: current.total,
+            usuariosMesAnterior: last.total,
+        });
+        console.log('ENTRO AQUÍ MIGUEL');
+
+    } catch (error) {
+        console.error(error);
+        console.log('entramos en el error');
+        res.status(500).json({ error: "Error obteniendo estadísticas de usuarios" });
+    }
+};
+
 const create = async (req, res) => {
     try {
         const result = await UserModel.insert(req.body);
@@ -45,19 +65,24 @@ const edit = async (req, res) => {
         const { userId } = req.params;
         const { nombre, apellidos, email, usuario, fecha_nacimiento, perfil, direccion, descripcion } = req.body;
 
+        // 🕵️‍♂️ LOG CONTROL: Abre la terminal de tu backend y mira qué llega EXACTAMENTE aquí
+        console.log("-> DIRECCIÓN ENTRANTE AL CONTROLADOR:", req.body.direccion);
+
         // Usuario actual del middleware (checkUserId)
         const usuarioActual = req.usuarioEncontrado;
 
-        // Si viene un archivo de Multer, usamos su nombre. Si no, dejamos la foto que ya tenía antes.
         let fotoFinal = usuarioActual.foto;
         if (req.file) {
             fotoFinal = req.file.filename;
         }
 
+        // Aseguramos que si viene un string vacío o undefined usemos el fallback correcto
+        const direccionA_Guardar = direccion ? direccion.trim() : '';
+
         await db.query(
             `UPDATE usuarios 
-     SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
-     WHERE id = ?`,
+             SET nombre = ?, apellidos = ?, email = ?, usuario = ?, foto = ?, fecha_nacimiento = ?, perfil = ?, direccion = ?, descripcion = ? 
+             WHERE id = ?`,
             [
                 nombre || null,
                 apellidos || null,
@@ -66,13 +91,12 @@ const edit = async (req, res) => {
                 fotoFinal,
                 fecha_nacimiento || null,
                 perfil || 'USUARIO',
-                direccion || '',
+                direccionA_Guardar, // <--- Forzamos la variable limpia aquí
                 descripcion || null,
                 userId
             ]
         );
 
-        // Recuperamos el usuario actualizado usando el método real del modelo
         const userUpdated = await UserModel.getById(userId);
         res.json({ message: 'Usuario actualizado correctamente', user: userUpdated });
 
@@ -100,6 +124,13 @@ const register = async (req, res) => {
     try {
         // Body: username, email, password
         req.body.password = bcrypt.hashSync(req.body.password, 8);
+
+        //mog 290626 foto
+
+        if (req.file) {
+            req.body.foto = req.file.filename;   // <-- sin /uploads/
+        }
+
 
         const result = await UserModel.insert(req.body);
         res.json({
@@ -153,6 +184,76 @@ const getValoraciones = async (req, res) => {
     }
 }
 
+const getPendienteValorar = async (req, res) => {
+    try {
+        const { vendedorId, compradorId } = req.query;
+        if (!vendedorId || !compradorId) {
+            return res.status(400).json({ message: 'Faltan parámetros requeridos.' });
+        }
+
+        const transaccion = await UserModel.getTransaccionPendiente(vendedorId, compradorId);
+        return res.json(transaccion || null);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al buscar transacción pendiente.' });
+    }
+};
+
+const createValoracion = async (req, res) => {
+    try {
+        const { puntuacion, comentario, transaccionId } = req.body;
+
+        // Validaciones básicas antes de tocar la base de datos
+        if (!puntuacion || !comentario || !transaccionId) {
+            return res.status(400).json({ message: 'Todos los campos (puntuacion, comentario, transaccionId) son obligatorios.' });
+        }
+
+        if (puntuacion < 1 || puntuacion > 5) {
+            return res.status(400).json({ message: 'La puntuación debe estar comprendida entre 1 y 5.' });
+        }
+
+        // Llamamos al modelo pasándole los parámetros limpios
+        const result = await UserModel.insertValoracion(puntuacion, comentario, transaccionId);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Valoración publicada correctamente',
+            valoracion_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error('Error en createValoracion controller:', error);
+        return res.status(500).json({ message: 'Error interno en el servidor al guardar la valoración.' });
+    }
+};
+
+const getUsuariosByRange = async (req, res) => {
+    try {
+        // 1. Captura el rango de la URL 
+        const { range } = req.params;
+
+        // 2. Llama al modelo pasando el rango
+        const usuarios = await usuariosModel.selectUsersByRange(range);
+
+        // 3. Responde al frontend con los datos 
+        return res.status(200).json(usuarios);
+    } catch (error) {
+        // Manejo de errores por si falla la base de datos
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
-    getAll, getById, create, edit, remove, register, getStatistics, getValoraciones
+    getAll,
+    getById,
+    getUsersStats,
+    getPendienteValorar,
+    createValoracion,
+    create,
+    edit,
+    remove,
+    register,
+    getStatistics,
+    getValoraciones,
+    getUsuariosByRange
 }

@@ -14,8 +14,8 @@ const getAll = async (req, res) =>{
 
 const getById = async (req, res) =>{
      try {
-      const { id } = req.params;
-      const data = await TransaccionesModel.getById(id);
+      const { transactionId } = req.params;
+      const data = await TransactionModel.selectById(transactionId);
       if (!data) {
         return res.status(404).json({ error: 'Transacción no encontrada' });
       }
@@ -27,49 +27,24 @@ const getById = async (req, res) =>{
 
 }
 
-const getByMonth = async (req,res) =>{
+const getActiveUsersByMonth = async (req,res) =>{
     try {
-        const {month} = req.params;
-        const year = new Date().getFullYear()
-        if(!month){
-            return res.status (400).json ({
-            message: 'parámetro month no recibido'
-        })
-    }
-        const ventasMensuales = await TransactionModel.selectByMonth (month, year)
-        res.json (ventasMensuales)
+        const mesActual = await TransactionModel.selectByMonth();
+        const mesAnterior = await TransactionModel.selectByLastMonth();
+        res.json({
+            mesActual: mesActual.total,
+            mesAnterior: mesAnterior.total
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'ERROR obteniendo ventas mes' }) 
+        res.status(500).json({ message: 'ERROR obteniendo usaurios activos' })
         }
 }
-
-
-const getByYear = async (req,res) =>{
-    try {
-      const { year } = req.params;
-      
-      if(!year){
-        return res.status (400).json ({
-            message: 'parámetro year no recibido'
-        })
-      }
-
-      const ventasAnuales = await TransactionModel.selectByYear(year);
-      res.json(ventasAnuales);
-      
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error obteniendo fechas por año' });
-    }
-
-}
-
 
 const create = async (req,res) =>{
     try {
         const result = await TransactionModel.insert (req.body);
-        const nuevaVenta = await TransactionModel.getById (result.insertId)
+        const nuevaVenta = await TransactionModel.selectById (result.insertId)
         if (!nuevaVenta){
          return res.status(404).json ({message: 'No existe la transacción con ese ID'})
         }
@@ -82,8 +57,8 @@ const create = async (req,res) =>{
 
 const edit = async (req,res)=>{
     try{
-        const {id} = req.params;
-        const updated = await TransaccionesModel.update(id, req.body);
+        const {transactionId} = req.params;
+        const updated = await TransactionModel.updateById(transactionId, req.body);
 
         if (updated === 0) {
         return res.status(404).json({ error: 'Transacción no encontrada' });
@@ -99,8 +74,8 @@ const edit = async (req,res)=>{
 
 const remove = async (req,res) =>{
     try {
-        const {ventaId} = req.params;
-        const result = await TransactionModel.deleteById(id);
+        const {transactionId} = req.params;
+        const result = await TransactionModel.deleteById(transactionId);
         if(result === 0){
             return res.status(404).json({ error: 'Transacción no encontrada' });
         }
@@ -111,12 +86,44 @@ const remove = async (req,res) =>{
     }
 }
 
+//**Compra de un artículo: el comprador llega en el body, sin autenticación de servidor por ahora */
+const comprar = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const { usuarios_id } = req.body;
+
+        if (!usuarios_id) {
+            return res.status(400).json({ message: 'Falta el id del comprador' });
+        }
+
+        const resultado = await TransactionModel.comprarArticulo(articleId, usuarios_id);
+
+        if (resultado.error === 'NOT_FOUND') {
+            return res.status(404).json({ message: 'El artículo no existe' });
+        }
+        if (resultado.error === 'OWN_ARTICLE') {
+            return res.status(400).json({ message: 'No puedes comprar tu propio artículo' });
+        }
+        if (resultado.error === 'NOT_AVAILABLE') {
+            return res.status(409).json({ message: 'El artículo ya no está disponible' });
+        }
+
+        res.status(201).json({
+            message: 'Compra realizada correctamente',
+            transaccionId: resultado.transaccionId
+        });
+    } catch (error) {
+        console.error('Error en comprar:', error);
+        res.status(500).json({ message: 'Error al procesar la compra' });
+    }
+}
+
 module.exports ={
     getAll,
     getById,
-    getByMonth,
-    getByYear,
+    getActiveUsersByMonth,
     create,
     edit,
-    remove
+    remove,
+    comprar
 }

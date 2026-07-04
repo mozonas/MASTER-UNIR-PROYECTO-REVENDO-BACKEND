@@ -10,7 +10,8 @@ const {
   getCategoriesPaginated,
   createCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  blockUserFromReport
 } = require('../../controllers/admin.controller');
 
 // GET usuarios
@@ -30,6 +31,10 @@ router.delete('/users/:id', checkAdminToken, deleteUser);
 
 // BLOQUEAR / DESBLOQUEAR usuario
 router.put('/users/:id', checkAdminToken, toggleBlockUser);
+
+// MOG 02072026 ->bloquear usuario desde reporte
+router.put('/users/block/:id', checkAdminToken, blockUserFromReport);
+
 
 
 //CATEGORÍAS

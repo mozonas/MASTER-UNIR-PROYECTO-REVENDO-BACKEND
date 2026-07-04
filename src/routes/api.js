@@ -16,11 +16,17 @@ router.use('/userarticles', require('./api/userarticles'));
 router.use('/admin', require('./api/admin'));
 
 router.use('/article', require('./api/article'));
-// router.use('/moderation', require('./api/moderation'));
-
-//router.use('/messages', require('./api/messages'));
-
 router.use ('/transactions', require ('./api/transactions'))
+router.use('/moderation', require('./api/moderation'));
 
+router.use('/messages', require('./api/messages'));
+
+
+//mog 210626 -> filtersHomeV3
+router.use ('/filters',require('./api/filters'))
+
+
+//mog 26062026 -> añadimos la ruta a activities
+router.use('/activity', require('./api/activity'));
 
 module.exports = router;

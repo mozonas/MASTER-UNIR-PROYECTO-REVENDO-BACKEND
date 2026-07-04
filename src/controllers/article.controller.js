@@ -2,11 +2,16 @@ const {
   getAll,
   getArticle,
   getArticleFotos,
+  getArticleEnums,
   getUserArticles,
+  createArticle,
   updateArticle,
   deleteArticle,
+  marcarArticuloVendido,
 } = require("../models/article.model");
+
 const UserModel = require("../models/users.model");
+const CategoryModel = require("../models/categories.model");
 
 const getAllUserArticles = async (req, res) => {
   const userId = req.params.userId;
@@ -15,6 +20,7 @@ const getAllUserArticles = async (req, res) => {
     const rawArticles = await getUserArticles(userId);
 
     return res.status(200).json({
+      status: "success",
       data: rawArticles,
     });
   } catch (error) {
@@ -43,20 +49,113 @@ const getAllArticles = async (req, res) => {
   }
 };
 
+const getEnums = async (req, res) => {
+  try {
+    const categories = await CategoryModel.getAll();
+    const articleEnums = await getArticleEnums();
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        categorias: categories,
+        estadoVenta: articleEnums.estadoVenta,
+        estadoProducto: articleEnums.estadoProducto,
+        tipoEntrega: articleEnums.tipoEntrega,
+        tipoPago: articleEnums.tipoPago,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener enums del artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener enums del artículo",
+    });
+  }
+};
+
+const createArticleHandler = async (req, res) => {
+  try {
+    const userId = Number(req.user?.userId);
+
+    if (!userId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+        .filter((file) => file && typeof file.filename === 'string')
+        .map((file) => `uploads/${file.filename}`)
+      : [];
+
+    const firstImage = uploadedImages[0]
+      ?? (Array.isArray(req.body.images)
+        ? (req.body.images[0] ?? "")
+        : (req.body.image1 ?? req.body.image ?? ""));
+
+    if (!String(firstImage).trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "La primera imagen es obligatoria",
+      });
+    }
+
+    const payload = {
+      ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
+      usuarios_id: userId,
+    };
+    const newArticleId = await createArticle(payload);
+    return res.status(201).json({
+      status: "success",
+      message: "Artículo creado correctamente",
+      data: { id: newArticleId },
+    });
+  } catch (error) {
+    console.error("Error al crear el artículo:", error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      status: "error",
+      message: statusCode === 500 ? "Error al crear el artículo" : error.message,
+    });
+  }
+};
+
 const editArticle = async (req, res) => {
   try {
     const articleId = req.params.articleId;
-    const updatedData = req.body;
-    const result = await updateArticle(articleId, updatedData);
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+        .filter((file) => file && typeof file.filename === 'string')
+        .map((file) => `uploads/${file.filename}`)
+      : [];
+    const updatedData = {
+      ...req.body,
+      images: uploadedImages.length ? uploadedImages : req.body.images,
+    };
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const result = await updateArticle(articleId, requesterUserId, updatedData, canEditAny);
     if (result) {
       return res.status(200).json({
         status: "success",
         message: "Artículo actualizado correctamente",
       });
     } else {
-      return res.status(404).json({
+      return res.status(403).json({
         status: "error",
-        message: "Artículo no encontrado",
+        message: "No autorizado para modificar este artículo",
       });
     }
   } catch (error) {
@@ -69,35 +168,217 @@ const editArticle = async (req, res) => {
 };
 
 const eraseArticle = async (req, res) => {
-  const articleId = req.params.articleId;
-  const result = await deleteArticle(articleId);
-  if (result) {
+  try {
+    const articleId = req.params.articleId;
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canDeleteAny = requesterRole === 'MODERADOR' || requesterRole === 'ADMIN';
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    const result = await deleteArticle(articleId, requesterUserId, canDeleteAny);
+    if (result) {
+      return res.status(200).json({
+        status: "success",
+        message: "Artículo eliminado correctamente",
+      });
+    } else {
+      return res.status(403).json({
+        status: "error",
+        message: "No autorizado para eliminar este artículo",
+      });
+    }
+  } catch (error) {
+    console.error("Error al eliminar el artículo:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al eliminar el artículo",
+    });
+  }
+};
+
+// Permite al propietario marcar manualmente su propio artículo como vendido,
+// indicando el método de pago real y el precio acordado
+const TIPOS_PAGO_VALIDOS = ['Efectivo', 'Tarjeta', 'Bizum'];
+
+// const marcarVendido = async (req, res) => {
+//   try {
+//     const { articleId } = req.params;
+//     const requesterUserId = Number(req.user?.userId);
+//     const { tipoPago, precio } = req.body;
+
+//     if (!requesterUserId) {
+//       return res.status(401).json({
+//         status: "error",
+//         message: "Token inválido o sin usuario",
+//       });
+//     }
+
+//     if (!TIPOS_PAGO_VALIDOS.includes(tipoPago)) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Método de pago no válido",
+//       });
+//     }
+
+//     const precioAcordado = Number(precio);
+//     if (!precioAcordado || precioAcordado <= 0) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "El precio acordado debe ser un número positivo",
+//       });
+//     }
+
+//     const articulo = await getArticle(articleId);
+//     if (!articulo) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: "Artículo no encontrado",
+//       });
+//     }
+
+//     if (Number(articulo.usuarios_id) !== requesterUserId) {
+//       return res.status(403).json({
+//         status: "error",
+//         message: "No puedes marcar como vendido un artículo que no es tuyo",
+//       });
+//     }
+
+//     const resultado = await marcarArticuloVendido(articleId, requesterUserId, {
+//       tipoPago,
+//       precio: precioAcordado,
+//     });
+
+//     if (resultado.error === 'NOT_AVAILABLE') {
+//       return res.status(409).json({
+//         status: "error",
+//         message: "El artículo ya no está disponible",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Artículo marcado como vendido",
+//       transaccionId: resultado.transaccionId,
+//     });
+//   } catch (error) {
+//     console.error("Error al marcar el artículo como vendido:", error);
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Error al marcar el artículo como vendido",
+//     });
+//   }
+// };
+
+const marcarVendido = async (req, res) => {
+  try {
+    const { articleId } = req.params;
+    const requesterUserId = Number(req.user?.userId);
+    const { tipoPago, precio, compradorId } = req.body; // 🌟 CAPTURAMOS compradorId DESDE EL FRONTEND
+
+    if (!requesterUserId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Token inválido o sin usuario",
+      });
+    }
+
+    if (!TIPOS_PAGO_VALIDOS.includes(tipoPago)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Método de pago no válido",
+      });
+    }
+
+    const precioAcordado = Number(precio);
+    if (!precioAcordado || precioAcordado <= 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "El precio acordado debe ser un número positivo",
+      });
+    }
+
+    const articulo = await getArticle(articleId);
+    if (!articulo) {
+      return res.status(404).json({
+        status: "error",
+        message: "Artículo no encontrado",
+      });
+    }
+
+    if (Number(articulo.usuarios_id) !== requesterUserId) {
+      return res.status(403).json({
+        status: "error",
+        message: "No puedes marcar como vendido un artículo que no es tuyo",
+      });
+    }
+
+    const resultado = await marcarArticuloVendido(articleId, requesterUserId, {
+      tipoPago,
+      precio: precioAcordado,
+      compradorId
+    });
+
+    if (resultado.error === 'NOT_AVAILABLE') {
+      return res.status(409).json({
+        status: "error",
+        message: "El artículo ya no está disponible",
+      });
+    }
+
     return res.status(200).json({
       status: "success",
-      message: "Artículo eliminado correctamente",
+      message: "Artículo marcado como vendido",
+      transaccionId: resultado.transaccionId,
     });
-  } else {
-    return res.status(404).json({
+  } catch (error) {
+    console.error("Error al marcar el artículo como vendido:", error);
+    return res.status(500).json({
       status: "error",
-      message: "Artículo no encontrado",
+      message: "Error al marcar el artículo como vendido",
     });
   }
 };
 
 const getById = async (req, res) => {
   try {
+    const requesterUserId = Number(req.user?.userId);
+    const requesterRole = String(req.user?.perfil || '').toUpperCase();
+    const canEditAny = requesterRole === 'MODERADOR';
+    /*  if (!requesterUserId) {
+       return res.status(401).json({
+         status: "error",
+         message: "Token inválido o sin usuario",
+       });
+     } */
+
     const { id } = req.params;
     const responseArticle = await getArticle(id);
-    if (responseArticle === undefined) {
+    if (responseArticle === undefined || ['RETIRADO', 'BORRADO'].includes(responseArticle.estadoVenta)) {
       console.error("Artículo no encontrado");
       return res.status(404).json({
         status: "error",
         message: "Artículo no encontrado",
-        data: responseArticle
+        data: undefined
       });
     }
+
+    /* if (!canEditAny && Number(responseArticle.usuarios_id) !== requesterUserId) {
+      return res.status(403).json({
+        status: "error",
+        message: "No autorizado para editar este artículo",
+      });
+    } */
+
     const responseFotos = await getArticleFotos(id);
-    const responseArticleSeller = await UserModel.getById(id);
+    const responseArticleSeller = responseArticle?.usuarios_id
+      ? await UserModel.getById(responseArticle.usuarios_id)
+      : null;
 
     const response = {
       ...responseArticle,
@@ -156,11 +437,101 @@ const searchArticles = async (req, res) => {
 };
 
 
+//**PARA DASHBOARD */
+const getSoldThisMonth = async (req, res) => {
+  try {
+    const { month } = req.params;
+    const year = new Date().getFullYear()
+    if (!month) {
+      return res.status(400).json({
+        message: 'month no recibido'
+      })
+    }
+    const ventasMensuales = await ArticleModel.selectSoldThisMonth(month, year)
+    res.json(ventasMensuales)
+  } catch (error) {
+    console.error("ERROR EN CONTROLLER:", error);
+    console.error(error);
+    res.status(500).json({ message: 'ERROR obteniendo ventas mes' })
+  }
+}
+
+// Llamada al modelo soldByyear
+const getSoldByYear = async (req, res) => {
+  try {
+    const { year } = req.params
+    if (!year) {
+      return res.status(400).json({
+        message: 'parámetro year no recibido'
+      })
+    }
+    const ventasAnuales = await ArticleModel.selectSoldByYear(year);
+    res.json(ventasAnuales)
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error obteniendo fechas por año' });
+  }
+}
+
+// LLamar al modelo selectbymonth para gestionar los articulos publicados el mes actual
+const getThisMonth = async (req, res) => {
+  try {
+    const data = await ArticleModel.selectByThisMonth()
+    res.json({ total: data.total })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: ' Error devolviendo articulos publicados al mes'
+    })
+  }
+}
+
+const getLastMonth = async (req, res) => {
+  try {
+    const data = await ArticleModel.selectByLastMonth();
+    res.json({ total: data.total })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: 'Error devolviendo articulos publicados el mes pasado'
+    })
+  }
+}
+
+//Controlador unificado para la Metric Card de publicaciones
+const getPublishedComp = async (req, res) => {
+  try {
+    const [thisMonthData, lastMonthData] = await Promise.all([
+      ArticleModel.selectByThisMonth(),
+      ArticleModel.selectByLastMonth()
+    ]);
+    const thisMonth = thisMonthData?.total || 0;
+    const lastMonth = lastMonthData?.total || 0;
+    const difference = thisMonth - lastMonth;
+    return res.json({ thisMonth, lastMonth, difference });
+  } catch (error) {
+    console.error('Error en getPublishedComparison:', error);
+    return res.status(500).json({
+      message: 'Error interno del servidor al calcular la comparativa.'
+    });
+  }
+}
+
+
 module.exports = {
   getAllUserArticles,
   getAllArticles,
+  getEnums,
+  createArticleHandler,
   editArticle,
   eraseArticle,
+  marcarVendido,
   searchArticles,
   getById,
+  getAllUserArticles,
+  getThisMonth,
+  getLastMonth,
+  getSoldThisMonth,
+  getSoldByYear,
+  getPublishedComp
 };
